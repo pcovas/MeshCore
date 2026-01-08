@@ -2,6 +2,9 @@
 #include <Mesh.h>
 #include "MyMesh.h"
 
+#define DEBUG_SERIAL Serial
+
+
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
   uint32_t n = 0;
@@ -106,7 +109,13 @@ void halt() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); 
+  delay(200); 
+  Serial.println("USB OK");
+ 
+  DEBUG_SERIAL.begin(115200);
+  delay(200);
+  DEBUG_SERIAL.println("Debug ativo");
 
   board.begin();
 
@@ -153,11 +162,11 @@ void setup() {
 #ifdef BLE_PIN_CODE
   char dev_name[32+16];
   sprintf(dev_name, "%s%s", BLE_NAME_PREFIX, the_mesh.getNodeName());
-  serial_interface.begin(dev_name, the_mesh.getBLEPin());
+ // serial_interface.begin(dev_name, the_mesh.getBLEPin());
 #else
   serial_interface.begin(Serial);
 #endif
-  the_mesh.startInterface(serial_interface);
+ // the_mesh.startInterface(serial_interface);
 #elif defined(RP2040_PLATFORM)
   LittleFS.begin();
   store.begin();
