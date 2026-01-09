@@ -4,6 +4,9 @@
 
 #define DEBUG_SERIAL Serial
 
+String g_wifi_ip = "";
+
+
 
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
@@ -207,6 +210,20 @@ void setup() {
 #ifdef WIFI_SSID
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   serial_interface.begin(TCP_PORT);
+  
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 5000) {
+      delay(100);
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+      g_wifi_ip = WiFi.localIP().toString();
+      Serial.print("WiFi IP: ");
+      Serial.println(g_wifi_ip);
+  } else {
+      g_wifi_ip = "No IP";
+      Serial.println("WiFi: sem IP");
+  }
 #elif defined(BLE_PIN_CODE)
   char dev_name[32+16];
   sprintf(dev_name, "%s%s", BLE_NAME_PREFIX, the_mesh.getNodeName());

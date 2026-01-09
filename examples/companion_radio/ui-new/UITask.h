@@ -18,6 +18,9 @@
 #include "../AbstractUITask.h"
 #include "../NodePrefs.h"
 
+
+
+
 class UITask : public AbstractUITask {
   DisplayDriver* _display;
   SensorManager* _sensors;
@@ -67,7 +70,7 @@ public:
     curr = NULL;
   }
   void begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* node_prefs);
-
+  void connectionStateChanged();
   void gotoHomeScreen() { setCurrScreen(home); }
   void showAlert(const char* text, int duration_millis);
   int  getMsgCount() const { return _msgcount; }

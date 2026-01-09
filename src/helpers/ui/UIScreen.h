@@ -21,5 +21,15 @@ public:
   virtual int render(DisplayDriver& display) =0;   // return value is number of millis until next render
   virtual bool handleInput(char c) { return false; }
   virtual void poll() { }
+
+  virtual bool needsFullRefresh() const { return true; }
+
+virtual void getDirtyRegion(int &x, int &y, int &w, int &h) const {
+    x = 0;
+    y = 0;
+    w = 0;
+    h = 0;
+}
+
 };
 

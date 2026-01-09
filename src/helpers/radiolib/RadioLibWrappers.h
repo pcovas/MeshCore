@@ -30,6 +30,8 @@ public:
   bool isInRecvMode() const override;
   bool isChannelActive();
 
+  int16_t cadScan();
+  
   bool isReceiving() override { 
     if (isReceivingPacket()) return true;
 

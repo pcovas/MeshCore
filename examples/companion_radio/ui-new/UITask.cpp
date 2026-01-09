@@ -3,6 +3,9 @@
 #include "../MyMesh.h"
 #include "target.h"
 
+extern String g_wifi_ip;  
+
+
 #ifndef AUTO_OFF_MILLIS
   #define AUTO_OFF_MILLIS     15000   // 15 seconds
 #endif
@@ -85,6 +88,7 @@ class HomeScreen : public UIScreen {
 #if UI_SENSORS_PAGE == 1
     SENSORS,
 #endif
+    WIFI_IP,  
     SHUTDOWN,
     Count    // keep as last
   };
@@ -227,7 +231,17 @@ public:
         display.setCursor(display.width() - timestamp_width - 1, y);
         display.print(tmp);
       }
-    } else if (_page == HomePage::RADIO) {
+    } else if (_page == HomePage::WIFI_IP) {
+    display.setColor(DisplayDriver::LIGHT);
+    display.setTextSize(1);
+
+    display.setCursor(0, 20);
+    display.print("WiFi IP:");
+
+    const char* ip = g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP";
+    display.setCursor(0, 32);
+    display.print(ip);   
+  } else if (_page == HomePage::RADIO) {
       display.setColor(DisplayDriver::YELLOW);
       display.setTextSize(1);
       // freq / sf
@@ -675,8 +689,29 @@ bool UITask::isButtonPressed() const {
 #endif
 }
 
+
+  void UITask::connectionStateChanged() {
+  if (_display != NULL) {
+    if (!_display->isOn()) {
+      _display->turnOn();
+    }
+    _auto_off = millis() + AUTO_OFF_MILLIS;
+    _next_refresh = 0; // força refresh imediato
+  }
+}
 void UITask::loop() {
   char c = 0;
+
+  // detectar mudança de estado de ligação (app conectada/desconectada)
+  static bool last_connected = false;
+  bool now_connected = hasConnection();   // já existe, o HomeScreen usa isto
+
+  if (now_connected != last_connected) {
+    last_connected = now_connected;
+    connectionStateChanged();
+  }
+
+
 #if UI_HAS_JOYSTICK
   int ev = user_btn.check();
   if (ev == BUTTON_EVENT_CLICK) {
