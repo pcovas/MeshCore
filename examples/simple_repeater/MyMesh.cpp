@@ -1,6 +1,9 @@
 #include "MyMesh.h"
 #include <algorithm>
 
+#define BRIDGE_RX 44
+#define BRIDGE_TX 43
+
 /* ------------------------------ Config -------------------------------- */
 
 #ifndef LORA_FREQ
@@ -663,7 +666,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
       _cli(board, rtc, sensors, &_prefs, this), telemetry(MAX_PACKET_PAYLOAD - 4), region_map(key_store), temp_map(key_store),
       discover_limiter(4, 120)  // max 4 every 2 minutes
 #if defined(WITH_RS232_BRIDGE)
-      , bridge(&_prefs, WITH_RS232_BRIDGE, _mgr, &rtc)
+      , bridge(&_prefs, Serial1, _mgr, &rtc)
 #endif
 #if defined(WITH_ESPNOW_BRIDGE)
       , bridge(&_prefs, _mgr, &rtc)

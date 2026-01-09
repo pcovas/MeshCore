@@ -14,13 +14,13 @@
 #endif
 
 #ifdef WITH_RS232_BRIDGE
-#include "helpers/bridges/RS232Bridge.h"
-#define WITH_BRIDGE
+  #include "helpers/bridges/RS232Bridge.h"
+  #define WITH_BRIDGE
 #endif
 
 #ifdef WITH_ESPNOW_BRIDGE
-#include "helpers/bridges/ESPNowBridge.h"
-#define WITH_BRIDGE
+  #include "helpers/bridges/ESPNowBridge.h"
+  #define WITH_BRIDGE
 #endif
 
 #include <helpers/AdvertDataHelpers.h>
@@ -35,9 +35,15 @@
 #include <helpers/RegionMap.h>
 #include "RateLimiter.h"
 
-#ifdef WITH_BRIDGE
-extern AbstractBridge* bridge;
+// ---------------- Bridge debug macros -------------------------------------
+#ifdef BRIDGE_DEBUG
+  #define BRIDGE_DBG_PRINTLN(msg) do { if (Serial) { Serial.println(msg); } } while(0)
+  #define BRIDGE_DBG_PRINTF(fmt, ...) do { if (Serial) { Serial.printf(fmt, ##__VA_ARGS__); } } while(0)
+#else
+  #define BRIDGE_DBG_PRINTLN(msg)
+  #define BRIDGE_DBG_PRINTF(fmt, ...)
 #endif
+// -------------------------------------------------------------------------
 
 struct RepeaterStats {
   uint16_t batt_milli_volts;
@@ -50,34 +56,33 @@ struct RepeaterStats {
   uint32_t total_up_time_secs;
   uint32_t n_sent_flood, n_sent_direct;
   uint32_t n_recv_flood, n_recv_direct;
-  uint16_t err_events;                // was 'n_full_events'
-  int16_t  last_snr;   // x 4
+  uint16_t err_events;
+  int16_t  last_snr;
   uint16_t n_direct_dups, n_flood_dups;
   uint32_t total_rx_air_time_secs;
 };
 
 #ifndef MAX_CLIENTS
-  #define MAX_CLIENTS           32
+  #define MAX_CLIENTS 32
 #endif
 
 struct NeighbourInfo {
   mesh::Identity id;
   uint32_t advert_timestamp;
   uint32_t heard_timestamp;
-  int8_t snr; // multiplied by 4, user should divide to get float value
+  int8_t snr;
 };
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "30 Nov 2025"
+  #define FIRMWARE_BUILD_DATE "30 Nov 2025"
 #endif
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION   "v1.11.0"
+  #define FIRMWARE_VERSION "v1.11.0"
 #endif
 
 #define FIRMWARE_ROLE "repeater"
-
-#define PACKET_LOG_FILE  "/packet_log"
+#define PACKET_LOG_FILE "/packet_log"
 
 class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   FILESYSTEM* _fs;
@@ -106,6 +111,7 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   uint8_t pending_sf;
   uint8_t pending_cr;
   int  matching_peer_indexes[MAX_CLIENTS];
+
 #if defined(WITH_RS232_BRIDGE)
   RS232Bridge bridge;
 #elif defined(WITH_ESPNOW_BRIDGE)
@@ -116,44 +122,28 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   uint8_t handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood);
   int handleRequest(ClientInfo* sender, uint32_t sender_timestamp, uint8_t* payload, size_t payload_len);
   mesh::Packet* createSelfAdvert();
-
   File openAppend(const char* fname);
 
 protected:
-  float getAirtimeBudgetFactor() const override {
-    return _prefs.airtime_factor;
-  }
-
+  float getAirtimeBudgetFactor() const override { return _prefs.airtime_factor; }
   bool allowPacketForward(const mesh::Packet* packet) override;
   const char* getLogDateTime() override;
   void logRxRaw(float snr, float rssi, const uint8_t raw[], int len) override;
-
   void logRx(mesh::Packet* pkt, int len, float score) override;
   void logTx(mesh::Packet* pkt, int len) override;
   void logTxFail(mesh::Packet* pkt, int len) override;
   int calcRxDelay(float score, uint32_t air_time) const override;
-
   uint32_t getRetransmitDelay(const mesh::Packet* packet) override;
   uint32_t getDirectRetransmitDelay(const mesh::Packet* packet) override;
-
-  int getInterferenceThreshold() const override {
-    return _prefs.interference_threshold;
-  }
-  int getAGCResetInterval() const override {
-    return ((int)_prefs.agc_reset_interval) * 4000;   // milliseconds
-  }
-  uint8_t getExtraAckTransmitCount() const override {
-    return _prefs.multi_acks;
-  }
+  int getInterferenceThreshold() const override { return _prefs.interference_threshold; }
+  int getAGCResetInterval() const override { return ((int)_prefs.agc_reset_interval) * 4000; }
+  uint8_t getExtraAckTransmitCount() const override { return _prefs.multi_acks; }
 
 #if ENV_INCLUDE_GPS == 1
-  void applyGpsPrefs() {
-    sensors.setSettingValue("gps", _prefs.gps_enabled?"1":"0");
-  }
+  void applyGpsPrefs() { sensors.setSettingValue("gps", _prefs.gps_enabled ? "1" : "0"); }
 #endif
 
   bool filterRecvFloodPacket(mesh::Packet* pkt) override;
-
   void onAnonDataRecv(mesh::Packet* packet, const uint8_t* secret, const mesh::Identity& sender, uint8_t* data, size_t len) override;
   int searchPeersByHash(const uint8_t* hash) override;
   void getPeerSharedSecret(uint8_t* dest_secret, int peer_idx) override;
@@ -164,33 +154,22 @@ protected:
 
 public:
   MyMesh(mesh::MainBoard& board, mesh::Radio& radio, mesh::MillisecondClock& ms, mesh::RNG& rng, mesh::RTCClock& rtc, mesh::MeshTables& tables);
-
   void begin(FILESYSTEM* fs);
 
   const char* getFirmwareVer() override { return FIRMWARE_VERSION; }
   const char* getBuildDate() override { return FIRMWARE_BUILD_DATE; }
   const char* getRole() override { return FIRMWARE_ROLE; }
   const char* getNodeName() { return _prefs.node_name; }
-  NodePrefs* getNodePrefs() {
-    return &_prefs;
-  }
+  NodePrefs* getNodePrefs() { return &_prefs; }
 
-  void savePrefs() override {
-    _cli.savePrefs(_fs);
-  }
-
+  void savePrefs() override { _cli.savePrefs(_fs); }
   void applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, int timeout_mins) override;
   bool formatFileSystem() override;
   void sendSelfAdvertisement(int delay_millis) override;
   void updateAdvertTimer() override;
   void updateFloodAdvertTimer() override;
-
   void setLoggingOn(bool enable) override { _logging = enable; }
-
-  void eraseLogFile() override {
-    _fs->remove(PACKET_LOG_FILE);
-  }
-
+  void eraseLogFile() override { _fs->remove(PACKET_LOG_FILE); }
   void dumpLogFile() override;
   void setTxPower(uint8_t power_dbm) override;
   void formatNeighborsReply(char *reply) override;
@@ -198,31 +177,70 @@ public:
   void formatStatsReply(char *reply) override;
   void formatRadioStatsReply(char *reply) override;
   void formatPacketStatsReply(char *reply) override;
-
   mesh::LocalIdentity& getSelfId() override { return self_id; }
-
   void saveIdentity(const mesh::LocalIdentity& new_id) override;
   void clearStats() override;
   void handleCommand(uint32_t sender_timestamp, char* command, char* reply);
   void loop();
 
+  // ---------- Bridge debug helpers (safe, compile-time guarded) ----------
+  bool isBridgeCompiled() const {
+  #if defined(WITH_BRIDGE)
+    return true;
+  #else
+    return false;
+  #endif
+  }
+
+  // Prints compile-time and prefs info about bridge. Call after Serial is ready.
+  void debugBridgeState() {
+  #ifdef BRIDGE_DEBUG
+    if (!Serial) return;
+    if (!isBridgeCompiled()) {
+      Serial.println("[BRIDGE] Not compiled in (WITH_BRIDGE not defined)");
+      return;
+    }
+    Serial.println("[BRIDGE] Bridge compiled into firmware.");
+  #if defined(WITH_RS232_BRIDGE)
+    Serial.println("[BRIDGE] Bridge type: RS232Bridge");
+  #elif defined(WITH_ESPNOW_BRIDGE)
+    Serial.println("[BRIDGE] Bridge type: ESPNowBridge");
+  #else
+    Serial.println("[BRIDGE] Bridge type: Unknown");
+  #endif
+
+    // Print prefs values (safe; prefs exist even if SPIFFS overrides later)
+    Serial.print("[BRIDGE] prefs.bridge_enabled = ");
+    Serial.println(_prefs.bridge_enabled ? "1" : "0");
+    Serial.print("[BRIDGE] prefs.bridge_baud = ");
+    Serial.println(_prefs.bridge_baud);
+    Serial.print("[BRIDGE] prefs.bridge_channel = ");
+    Serial.println(_prefs.bridge_channel);
+    Serial.print("[BRIDGE] prefs.bridge_pkt_src = ");
+    Serial.println(_prefs.bridge_pkt_src);
+  #endif
+  }
+  // ----------------------------------------------------------------------
+
 #if defined(WITH_BRIDGE)
   void setBridgeState(bool enable) override {
     if (enable == bridge.isRunning()) return;
-    if (enable)
-    {
+    if (enable) {
+      BRIDGE_DBG_PRINTLN("Calling bridge.begin()");
       bridge.begin();
-    }
-    else 
-    {
+    } else {
+      BRIDGE_DBG_PRINTLN("Calling bridge.end()");
       bridge.end();
     }
   }
 
   void restartBridge() override {
+    // guard: if bridge has no isRunning(), this will still compile if the bridge implements it
     if (!bridge.isRunning()) return;
+    BRIDGE_DBG_PRINTLN("Restarting bridge");
     bridge.end();
     bridge.begin();
   }
 #endif
-};
+
+}; // class MyMesh

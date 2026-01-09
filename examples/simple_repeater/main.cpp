@@ -1,6 +1,5 @@
-#include <Arduino.h>   // needed for PlatformIO
+#include <Arduino.h>
 #include <Mesh.h>
-
 #include "MyMesh.h"
 
 #ifdef DISPLAY_CLASS
@@ -14,15 +13,23 @@ SimpleMeshTables tables;
 MyMesh the_mesh(board, radio_driver, *new ArduinoMillis(), fast_rng, rtc_clock, tables);
 
 void halt() {
-  while (1) ;
+  while (1);
 }
 
-static char command[160];
-
 void setup() {
+  // --- USB CDC (ESSENCIAL no ESP32-S3) ---
   Serial.begin(115200);
-  delay(1000);
+  delay(100);
 
+  if (Serial) 
+    { Serial.println("[BOOT] Heltec V4 Repeater + RS232 Bridge"); 
+    }
+
+  // --- UART para o RS232Bridge ---
+  Serial1.begin(115200, SERIAL_8N1, WITH_RS232_BRIDGE_RX, WITH_RS232_BRIDGE_TX);
+  Serial.println("[BOOT] Serial1 inicializado");
+
+  // --- Inicialização do board ---
   board.begin();
 
 #ifdef DISPLAY_CLASS
@@ -35,11 +42,13 @@ void setup() {
 #endif
 
   if (!radio_init()) {
+    Serial.println("[ERRO] radio_init falhou");
     halt();
   }
 
   fast_rng.begin(radio_get_rng_seed());
 
+  // --- Filesystem ---
   FILESYSTEM* fs;
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   InternalFS.begin();
@@ -57,64 +66,53 @@ void setup() {
 #else
   #error "need to define filesystem"
 #endif
+
   if (!store.load("_main", the_mesh.self_id)) {
-    MESH_DEBUG_PRINTLN("Generating new keypair");
-    the_mesh.self_id = radio_new_identity();   // create new random identity
+    Serial.println("[INFO] Generating new keypair");
+    the_mesh.self_id = radio_new_identity();
     int count = 0;
-    while (count < 10 && (the_mesh.self_id.pub_key[0] == 0x00 || the_mesh.self_id.pub_key[0] == 0xFF)) {  // reserved id hashes
-      the_mesh.self_id = radio_new_identity(); count++;
+    while (count < 10 && 
+          (the_mesh.self_id.pub_key[0] == 0x00 || the_mesh.self_id.pub_key[0] == 0xFF)) {
+      the_mesh.self_id = radio_new_identity();
+      count++;
     }
     store.save("_main", the_mesh.self_id);
   }
 
-  Serial.print("Repeater ID: ");
-  mesh::Utils::printHex(Serial, the_mesh.self_id.pub_key, PUB_KEY_SIZE); Serial.println();
-
-  command[0] = 0;
+  Serial.print("[ID] Repeater ID: ");
+  mesh::Utils::printHex(Serial, the_mesh.self_id.pub_key, PUB_KEY_SIZE);
+  Serial.println();
 
   sensors.begin();
 
+  // --- Inicia o Mesh (inclui RS232Bridge.begin()) ---
   the_mesh.begin(fs);
+  Serial.println("[BOOT] Mesh iniciado");
+  the_mesh.debugBridgeState();
+
 
 #ifdef DISPLAY_CLASS
   ui_task.begin(the_mesh.getNodePrefs(), FIRMWARE_BUILD_DATE, FIRMWARE_VERSION);
 #endif
 
-  // send out initial Advertisement to the mesh
+  // Envia advertisement inicial
   the_mesh.sendSelfAdvertisement(16000);
+
+  Serial.println("[BOOT] Setup completo\n");
 }
 
 void loop() {
-  int len = strlen(command);
-  while (Serial.available() && len < sizeof(command)-1) {
-    char c = Serial.read();
-    if (c != '\n') {
-      command[len++] = c;
-      command[len] = 0;
-      Serial.print(c);
-    }
-    if (c == '\r') break;
-  }
-  if (len == sizeof(command)-1) {  // command buffer full
-    command[sizeof(command)-1] = '\r';
-  }
-
-  if (len > 0 && command[len - 1] == '\r') {  // received complete line
-    Serial.print('\n');
-    command[len - 1] = 0;  // replace newline with C string null terminator
-    char reply[160];
-    the_mesh.handleCommand(0, command, reply);  // NOTE: there is no sender_timestamp via serial!
-    if (reply[0]) {
-      Serial.print("  -> "); Serial.println(reply);
-    }
-
-    command[0] = 0;  // reset command buffer
+  // CLI DESATIVADO — evita bloquear o Serial
+  while (Serial.available()) {
+    Serial.read(); // limpa buffer
   }
 
   the_mesh.loop();
   sensors.loop();
+
 #ifdef DISPLAY_CLASS
   ui_task.loop();
 #endif
+
   rtc_clock.tick();
 }
