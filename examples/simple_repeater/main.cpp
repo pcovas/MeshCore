@@ -87,8 +87,11 @@ void setup() {
 
   // --- Inicia o Mesh (inclui RS232Bridge.begin()) ---
   the_mesh.begin(fs);
+if (Serial) {
   Serial.println("[BOOT] Mesh iniciado");
   the_mesh.debugBridgeState();
+}
+
 
 
 #ifdef DISPLAY_CLASS
@@ -97,8 +100,7 @@ void setup() {
 
   // Envia advertisement inicial
   the_mesh.sendSelfAdvertisement(16000);
-
-  Serial.println("[BOOT] Setup completo\n");
+if (Serial) Serial.println("[BOOT] Setup completo");
 }
 
 void loop() {
