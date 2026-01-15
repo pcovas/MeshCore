@@ -9,23 +9,43 @@
 #include "helpers/esp32/SerialWifiInterface.h"
 #include "helpers/esp32/MultiInterface.h"
 
-// Global interface objects
+#define DEBUG_SERIAL Serial
+
+String g_wifi_ip = "";
+
 SerialBLEInterface ble_if;
 SerialWifiInterface wifi_if;
 MultiInterface serial_interface;
-
-String g_wifi_ip = "";
 
 #ifndef TCP_PORT
 #define TCP_PORT 5000
 #endif
 
-#define DEBUG_SERIAL Serial
+// Believe it or not, this std C function is busted on some platforms!
+static uint32_t _atoi(const char* sp) {
+  uint32_t n = 0;
+  while (*sp && *sp >= '0' && *sp <= '9') {
+    n *= 10;
+    n += (*sp++ - '0');
+  }
+  return n;
+}
 
 /* ---------------- FILESYSTEM ---------------- */
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   #include <InternalFileSystem.h>
-  DataStore store(InternalFS, rtc_clock);
+  #if defined(QSPIFLASH)
+    #include <CustomLFS_QSPIFlash.h>
+    DataStore store(InternalFS, QSPIFlash, rtc_clock);
+  #else
+    #if defined(EXTRAFS)
+      #include <CustomLFS.h>
+      CustomLFS ExtraFS(0xD4000, 0x19000, 128);
+      DataStore store(InternalFS, ExtraFS, rtc_clock);
+    #else
+      DataStore store(InternalFS, rtc_clock);
+    #endif
+  #endif
 
 #elif defined(RP2040_PLATFORM)
   #include <LittleFS.h>
@@ -94,6 +114,12 @@ void setup() {
   fast_rng.begin(radio_get_rng_seed());
 
   /* FILESYSTEM INIT */
+#if defined(ESP32)
+  if (!SPIFFS.begin(false)) {
+    Serial.println("[SPIFFS] Mount failed, formatting...");
+    SPIFFS.begin(true);
+  }
+#endif
   store.begin();
 
   /* MESH INIT */

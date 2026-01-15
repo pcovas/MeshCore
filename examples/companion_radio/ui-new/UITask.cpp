@@ -241,19 +241,19 @@ public:
     display.setColor(DisplayDriver::LIGHT);
     display.setTextSize(1);
 
-    display.setCursor(0, 16);
-    display.print("Transport:");
+    //display.setCursor(0, 16);
+    //display.print("Transport:");
 
-    display.setCursor(0, 28);
+    display.setCursor(0, 16);
     if (serial_interface.mode == MultiInterface::Mode::BLE) {
       display.print("Active: BLE");
     } else {
       display.print("Active: WiFi");
     }
 
-    display.setCursor(0, 40);
+    display.setCursor(0, 28);
     display.print("WiFi IP:");
-    display.setCursor(0, 52);
+    display.setCursor(0, 40);
     display.print(g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP");
 
     display.drawTextCentered(display.width()/2, 64 - 11, "toggle: " PRESS_LABEL);
