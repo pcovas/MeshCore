@@ -1,39 +1,31 @@
-#include <Arduino.h>   // needed for PlatformIO
+#include <Arduino.h>
 #include <Mesh.h>
 #include "MyMesh.h"
 
-#ifdef ESP32 
-#include <WiFi.h> 
+#include <WiFi.h>
+
+// Interfaces
+#include "helpers/esp32/SerialBLEInterface.h"
+#include "helpers/esp32/SerialWifiInterface.h"
+#include "helpers/esp32/MultiInterface.h"
+
+// Global interface objects
+SerialBLEInterface ble_if;
+SerialWifiInterface wifi_if;
+MultiInterface serial_interface;
+
+String g_wifi_ip = "";
+
+#ifndef TCP_PORT
+#define TCP_PORT 5000
 #endif
 
 #define DEBUG_SERIAL Serial
-String g_wifi_ip = "";   // usado pela UI para mostrar o IP
-
-// Believe it or not, this std C function is busted on some platforms!
-static uint32_t _atoi(const char* sp) {
-  uint32_t n = 0;
-  while (*sp && *sp >= '0' && *sp <= '9') {
-    n *= 10;
-    n += (*sp++ - '0');
-  }
-  return n;
-}
 
 /* ---------------- FILESYSTEM ---------------- */
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   #include <InternalFileSystem.h>
-  #if defined(QSPIFLASH)
-    #include <CustomLFS_QSPIFlash.h>
-    DataStore store(InternalFS, QSPIFlash, rtc_clock);
-  #else
-    #if defined(EXTRAFS)
-      #include <CustomLFS.h>
-      CustomLFS ExtraFS(0xD4000, 0x19000, 128);
-      DataStore store(InternalFS, ExtraFS, rtc_clock);
-    #else
-      DataStore store(InternalFS, rtc_clock);
-    #endif
-  #endif
+  DataStore store(InternalFS, rtc_clock);
 
 #elif defined(RP2040_PLATFORM)
   #include <LittleFS.h>
@@ -45,51 +37,6 @@ static uint32_t _atoi(const char* sp) {
 
 #else
   #error "Unsupported platform"
-#endif
-
-/* ---------------- INTERFACE SELECTION ---------------- */
-#ifdef ESP32
-  // Preferir BLE quando ambos definidos
-  #if defined(BLE_PIN_CODE)
-    #include <helpers/esp32/SerialBLEInterface.h>
-    SerialBLEInterface serial_interface;
-
-  #elif defined(WIFI_SSID)
-    #include <helpers/esp32/SerialWifiInterface.h>
-    SerialWifiInterface serial_interface;
-    #ifndef TCP_PORT
-      #define TCP_PORT 5000
-    #endif
-
-  #elif defined(SERIAL_RX)
-    #include <helpers/ArduinoSerialInterface.h>
-    ArduinoSerialInterface serial_interface;
-    HardwareSerial companion_serial(1);
-
-  #else
-    #include <helpers/ArduinoSerialInterface.h>
-    ArduinoSerialInterface serial_interface;
-  #endif
-
-#elif defined(RP2040_PLATFORM)
-  #include <helpers/ArduinoSerialInterface.h>
-  ArduinoSerialInterface serial_interface;
-
-#elif defined(NRF52_PLATFORM)
-  #ifdef BLE_PIN_CODE
-    #include <helpers/nrf52/SerialBLEInterface.h>
-    SerialBLEInterface serial_interface;
-  #else
-    #include <helpers/ArduinoSerialInterface.h>
-    ArduinoSerialInterface serial_interface;
-  #endif
-
-#elif defined(STM32_PLATFORM)
-  #include <helpers/ArduinoSerialInterface.h>
-  ArduinoSerialInterface serial_interface;
-
-#else
-  #error "need to define a serial interface"
 #endif
 
 /* ---------------- GLOBAL OBJECTS ---------------- */
@@ -146,10 +93,7 @@ void setup() {
   if (!radio_init()) halt();
   fast_rng.begin(radio_get_rng_seed());
 
-  /* FILESYSTEM */
-#if defined(ESP32)
-  SPIFFS.begin(true);
-#endif
+  /* FILESYSTEM INIT */
   store.begin();
 
   /* MESH INIT */
@@ -162,15 +106,25 @@ void setup() {
   );
 
   /* ======================================================
-   *                WIFI (APENAS PARA OBTER IP)
+   *                BLE INIT
    * ====================================================== */
-#ifdef ESP32
-#ifdef WIFI_SSID
-  Serial.println("[WiFi] Starting…");
+#ifdef BLE_PIN_CODE
+  {
+    char dev_name[48];
+    sprintf(dev_name, "%s%s", BLE_NAME_PREFIX, the_mesh.getNodeName());
+    ble_if.begin(dev_name, the_mesh.getBLEPin());
+    serial_interface.setBLE(&ble_if);
+  }
+#endif
 
+  /* ======================================================
+   *                WIFI INIT (TCP)
+   * ====================================================== */
+#ifdef WIFI_SSID
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
 
+  Serial.println("[WiFi] Connecting…");
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
     delay(200);
@@ -178,7 +132,6 @@ void setup() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    // DHCP pode demorar
     for (int i = 0; i < 10 && WiFi.localIP().toString() == "0.0.0.0"; i++) {
       delay(500);
       Serial.println("[WiFi] Waiting for DHCP…");
@@ -188,6 +141,9 @@ void setup() {
       g_wifi_ip = WiFi.localIP().toString();
       Serial.print("[WiFi] IP: ");
       Serial.println(g_wifi_ip);
+
+      wifi_if.begin(TCP_PORT);
+      serial_interface.setWiFi(&wifi_if);
     } else {
       Serial.println("[WiFi] DHCP failed");
       g_wifi_ip = "";
@@ -197,31 +153,17 @@ void setup() {
     g_wifi_ip = "";
   }
 #endif
-#endif
 
   /* ======================================================
-   *                BLE (INTERFACE PRINCIPAL)
+   *                SELECT INITIAL TRANSPORT
    * ====================================================== */
-#ifdef ESP32
-#if defined(BLE_PIN_CODE)
-  char dev_name[48];
-  sprintf(dev_name, "%s%s", BLE_NAME_PREFIX, the_mesh.getNodeName());
-  serial_interface.begin(dev_name, the_mesh.getBLEPin());
-
-#elif defined(WIFI_SSID)
-  serial_interface.begin(TCP_PORT);
-
-#elif defined(SERIAL_RX)
-  companion_serial.setPins(SERIAL_RX, SERIAL_TX);
-  companion_serial.begin(115200);
-  serial_interface.begin(companion_serial);
-
-#else
-  serial_interface.begin(Serial);
-#endif
+  if (serial_interface.ble != nullptr) {
+    serial_interface.setMode(MultiInterface::Mode::BLE);
+  } else if (serial_interface.wifi != nullptr) {
+    serial_interface.setMode(MultiInterface::Mode::WIFI);
+  }
 
   the_mesh.startInterface(serial_interface);
-#endif
 
   /* SENSORS */
   sensors.begin();

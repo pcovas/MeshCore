@@ -2,8 +2,13 @@
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
 #include "target.h"
+#include "helpers/esp32/MultiInterface.h"
+#include <WiFi.h>
+
+
 
 extern String g_wifi_ip;  
+extern MultiInterface serial_interface;   // ou um getter se preferires esconder global
 
 
 #ifndef AUTO_OFF_MILLIS
@@ -88,7 +93,8 @@ class HomeScreen : public UIScreen {
 #if UI_SENSORS_PAGE == 1
     SENSORS,
 #endif
-    WIFI_IP,  
+    WIFI_IP,
+    TRANSPORT, 
     SHUTDOWN,
     Count    // keep as last
   };
@@ -231,7 +237,27 @@ public:
         display.setCursor(display.width() - timestamp_width - 1, y);
         display.print(tmp);
       }
-    } else if (_page == HomePage::WIFI_IP) {
+    } else if (_page == HomePage::TRANSPORT) {
+    display.setColor(DisplayDriver::LIGHT);
+    display.setTextSize(1);
+
+    display.setCursor(0, 16);
+    display.print("Transport:");
+
+    display.setCursor(0, 28);
+    if (serial_interface.mode == MultiInterface::Mode::BLE) {
+      display.print("Active: BLE");
+    } else {
+      display.print("Active: WiFi");
+    }
+
+    display.setCursor(0, 40);
+    display.print("WiFi IP:");
+    display.setCursor(0, 52);
+    display.print(g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP");
+
+    display.drawTextCentered(display.width()/2, 64 - 11, "toggle: " PRESS_LABEL);
+  } else if (_page == HomePage::WIFI_IP) {
     display.setColor(DisplayDriver::LIGHT);
     display.setTextSize(1);
 
@@ -399,6 +425,21 @@ public:
     if (c == KEY_LEFT || c == KEY_PREV) {
       _page = (_page + HomePage::Count - 1) % HomePage::Count;
       return true;
+    }
+    if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {
+    if (serial_interface.mode == MultiInterface::Mode::BLE &&
+        serial_interface.wifi != nullptr &&
+        WiFi.status() == WL_CONNECTED) {
+     serial_interface.setMode(MultiInterface::Mode::WIFI);
+     _task->showAlert("WiFi selected", 800);
+    } else if (serial_interface.mode == MultiInterface::Mode::WIFI &&
+              serial_interface.ble != nullptr) {
+     serial_interface.setMode(MultiInterface::Mode::BLE);
+     _task->showAlert("BLE selected", 800);
+   } else {
+     _task->showAlert("No alternative", 800);
+   }
+   return true;
     }
     if (c == KEY_NEXT || c == KEY_RIGHT) {
       _page = (_page + 1) % HomePage::Count;
