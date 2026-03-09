@@ -1,7 +1,8 @@
+#include "target.h"
 #include "UITask.h"
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
-#include "target.h"
+
 #ifdef WIFI_SSID
   #include <WiFi.h>
 #endif
@@ -81,6 +82,7 @@ class HomeScreen : public UIScreen {
     RECENT,
     RADIO,
     BLUETOOTH,
+    WIFI,
     ADVERT,
 #if ENV_INCLUDE_GPS == 1
     GPS,
@@ -277,6 +279,22 @@ public:
           32, 32);
       display.setTextSize(1);
       display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
+    } else if (_page == HomePage::WIFI) {
+    display.setColor(DisplayDriver::GREEN);
+
+    extern const unsigned char wifi_on[];
+    extern const unsigned char wifi_off[];
+
+    display.drawXbm(
+        (display.width() - 32) / 2,
+        18,
+        _task->isWifiEnabled() ? wifi_on : wifi_off,
+        32,
+        32
+    );
+
+    display.setTextSize(1);
+    display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
     } else if (_page == HomePage::ADVERT) {
       display.setColor(DisplayDriver::GREEN);
       display.drawXbm((display.width() - 32) / 2, 18, advert_icon, 32, 32);
@@ -424,6 +442,16 @@ public:
         _task->enableSerial();
       }
       return true;
+    }
+    if (c == KEY_ENTER && _page == HomePage::WIFI) {
+    if (_task->isWifiEnabled()) {
+        _task->disableWifi();
+        _task->showAlert("WiFi: OFF", 800);
+    } else {
+        _task->enableWifi();
+        _task->showAlert("WiFi: ON", 800);
+    }
+    return true;
     }
     if (c == KEY_ENTER && _page == HomePage::ADVERT) {
       _task->notify(UIEventType::ack);
@@ -919,17 +947,50 @@ void UITask::toggleGPS() {
 }
 
 void UITask::toggleBuzzer() {
-    // Toggle buzzer quiet mode
-  #ifdef PIN_BUZZER
-    if (buzzer.isQuiet()) {
-      buzzer.quiet(false);
-      notify(UIEventType::ack);
-    } else {
-      buzzer.quiet(true);
-    }
-    _node_prefs->buzzer_quiet = buzzer.isQuiet();
-    the_mesh.savePrefs();
-    showAlert(buzzer.isQuiet() ? "Buzzer: OFF" : "Buzzer: ON", 800);
-    _next_refresh = 0;  // trigger refresh
-  #endif
+  // Toggle buzzer quiet mode
+#ifdef PIN_BUZZER
+  if (buzzer.isQuiet()) {
+    buzzer.quiet(false);
+    notify(UIEventType::ack);
+  } else {
+    buzzer.quiet(true);
+  }
+  _node_prefs->buzzer_quiet = buzzer.isQuiet();
+  the_mesh.savePrefs();
+  showAlert(buzzer.isQuiet() ? "Buzzer: OFF" : "Buzzer: ON", 800);
+  _next_refresh = 0;  // trigger refresh
+#endif
+}   // <-- FECHA A FUNÇÃO AQUI
+
+
+// ===============================
+// WiFi Support (fora de qualquer função)
+// ===============================
+
+bool UITask::isWifiEnabled() {
+#ifdef WIFI_SSID
+  return WiFi.status() == WL_CONNECTED;
+#else
+  return false;
+#endif
 }
+
+void UITask::enableWifi() {
+#ifdef WIFI_SSID
+  WiFi.mode(WIFI_STA);
+  #ifdef WIFI_PASSWORD
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  #else
+    WiFi.begin(WIFI_SSID);
+  #endif
+#endif
+}
+
+
+void UITask::disableWifi() {
+#ifdef WIFI_SSID
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+#endif
+}
+
