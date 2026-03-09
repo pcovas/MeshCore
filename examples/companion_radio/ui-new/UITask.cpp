@@ -1,11 +1,15 @@
-#include "target.h"
 #include "UITask.h"
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
+#include "target.h"
+#include "helpers/esp32/MultiInterface.h"
+#include <WiFi.h>
 
-#ifdef WIFI_SSID
-  #include <WiFi.h>
-#endif
+
+
+extern String g_wifi_ip;  
+extern MultiInterface serial_interface;   // ou um getter se preferires esconder global
+
 
 #ifndef AUTO_OFF_MILLIS
   #define AUTO_OFF_MILLIS     15000   // 15 seconds
@@ -82,7 +86,6 @@ class HomeScreen : public UIScreen {
     RECENT,
     RADIO,
     BLUETOOTH,
-    WIFI,
     ADVERT,
 #if ENV_INCLUDE_GPS == 1
     GPS,
@@ -90,6 +93,8 @@ class HomeScreen : public UIScreen {
 #if UI_SENSORS_PAGE == 1
     SENSORS,
 #endif
+    WIFI_IP,
+    TRANSPORT, 
     SHUTDOWN,
     Count    // keep as last
   };
@@ -105,14 +110,8 @@ class HomeScreen : public UIScreen {
 
   void renderBatteryIndicator(DisplayDriver& display, uint16_t batteryMilliVolts) {
     // Convert millivolts to percentage
-#ifndef BATT_MIN_MILLIVOLTS
-  #define BATT_MIN_MILLIVOLTS 3000
-#endif
-#ifndef BATT_MAX_MILLIVOLTS
-  #define BATT_MAX_MILLIVOLTS 4200
-#endif
-    const int minMilliVolts = BATT_MIN_MILLIVOLTS;
-    const int maxMilliVolts = BATT_MAX_MILLIVOLTS;
+    const int minMilliVolts = 3000; // Minimum voltage (e.g., 3.0V)
+    const int maxMilliVolts = 4200; // Maximum voltage (e.g., 4.2V)
     int batteryPercentage = ((batteryMilliVolts - minMilliVolts) * 100) / (maxMilliVolts - minMilliVolts);
     if (batteryPercentage < 0) batteryPercentage = 0; // Clamp to 0%
     if (batteryPercentage > 100) batteryPercentage = 100; // Clamp to 100%
@@ -133,14 +132,6 @@ class HomeScreen : public UIScreen {
     // fill the battery based on the percentage
     int fillWidth = (batteryPercentage * (iconWidth - 4)) / 100;
     display.fillRect(iconX + 2, iconY + 2, fillWidth, iconHeight - 4);
-
-    // show muted icon if buzzer is muted
-#ifdef PIN_BUZZER
-    if (_task->isBuzzerQuiet()) {
-      display.setColor(DisplayDriver::RED);
-      display.drawXbm(iconX - 9, iconY + 1, muted_icon, 8, 8);
-    }
-#endif
   }
 
   CayenneLPP sensors_lpp;
@@ -148,7 +139,7 @@ class HomeScreen : public UIScreen {
   bool sensors_scroll = false;
   int sensors_scroll_offset = 0;
   int next_sensors_refresh = 0;
-  
+
   void refresh_sensors() {
     if (millis() > next_sensors_refresh) {
       sensors_lpp.reset();
@@ -211,17 +202,10 @@ public:
       sprintf(tmp, "MSG: %d", _task->getMsgCount());
       display.drawTextCentered(display.width() / 2, 20, tmp);
 
-      #ifdef WIFI_SSID
-        IPAddress ip = WiFi.localIP();
-        snprintf(tmp, sizeof(tmp), "IP: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-        display.setTextSize(1);
-        display.drawTextCentered(display.width() / 2, 54, tmp); 
-      #endif
       if (_task->hasConnection()) {
         display.setColor(DisplayDriver::GREEN);
         display.setTextSize(1);
         display.drawTextCentered(display.width() / 2, 43, "< Connected >");
-
       } else if (the_mesh.getBLEPin() != 0) { // BT pin
         display.setColor(DisplayDriver::RED);
         display.setTextSize(2);
@@ -253,7 +237,37 @@ public:
         display.setCursor(display.width() - timestamp_width - 1, y);
         display.print(tmp);
       }
-    } else if (_page == HomePage::RADIO) {
+    } else if (_page == HomePage::TRANSPORT) {
+    display.setColor(DisplayDriver::LIGHT);
+    display.setTextSize(1);
+
+    //display.setCursor(0, 16);
+    //display.print("Transport:");
+
+    display.setCursor(0, 16);
+    if (serial_interface.mode == MultiInterface::Mode::BLE) {
+      display.print("Active: BLE");
+    } else {
+      display.print("Active: WiFi");
+    }
+
+    display.setCursor(0, 28);
+    display.print("WiFi IP:");
+    display.setCursor(0, 40);
+    display.print(g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP");
+
+    display.drawTextCentered(display.width()/2, 64 - 11, "toggle: " PRESS_LABEL);
+  } else if (_page == HomePage::WIFI_IP) {
+    display.setColor(DisplayDriver::LIGHT);
+    display.setTextSize(1);
+
+    display.setCursor(0, 20);
+    display.print("WiFi IP:");
+
+    const char* ip = g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP";
+    display.setCursor(0, 32);
+    display.print(ip);   
+  } else if (_page == HomePage::RADIO) {
       display.setColor(DisplayDriver::YELLOW);
       display.setTextSize(1);
       // freq / sf
@@ -279,22 +293,6 @@ public:
           32, 32);
       display.setTextSize(1);
       display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
-    } else if (_page == HomePage::WIFI) {
-    display.setColor(DisplayDriver::GREEN);
-
-    extern const unsigned char wifi_on[];
-    extern const unsigned char wifi_off[];
-
-    display.drawXbm(
-        (display.width() - 32) / 2,
-        18,
-        _task->isWifiEnabled() ? wifi_on : wifi_off,
-        32,
-        32
-    );
-
-    display.setTextSize(1);
-    display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
     } else if (_page == HomePage::ADVERT) {
       display.setColor(DisplayDriver::GREEN);
       display.drawXbm((display.width() - 32) / 2, 18, advert_icon, 32, 32);
@@ -428,6 +426,21 @@ public:
       _page = (_page + HomePage::Count - 1) % HomePage::Count;
       return true;
     }
+    if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {
+    if (serial_interface.mode == MultiInterface::Mode::BLE &&
+        serial_interface.wifi != nullptr &&
+        WiFi.status() == WL_CONNECTED) {
+     serial_interface.setMode(MultiInterface::Mode::WIFI);
+     _task->showAlert("WiFi selected", 800);
+    } else if (serial_interface.mode == MultiInterface::Mode::WIFI &&
+              serial_interface.ble != nullptr) {
+     serial_interface.setMode(MultiInterface::Mode::BLE);
+     _task->showAlert("BLE selected", 800);
+   } else {
+     _task->showAlert("No alternative", 800);
+   }
+   return true;
+    }
     if (c == KEY_NEXT || c == KEY_RIGHT) {
       _page = (_page + 1) % HomePage::Count;
       if (_page == HomePage::RECENT) {
@@ -442,16 +455,6 @@ public:
         _task->enableSerial();
       }
       return true;
-    }
-    if (c == KEY_ENTER && _page == HomePage::WIFI) {
-    if (_task->isWifiEnabled()) {
-        _task->disableWifi();
-        _task->showAlert("WiFi: OFF", 800);
-    } else {
-        _task->enableWifi();
-        _task->showAlert("WiFi: ON", 800);
-    }
-    return true;
     }
     if (c == KEY_ENTER && _page == HomePage::ADVERT) {
       _task->notify(UIEventType::ack);
@@ -494,17 +497,15 @@ class MsgPreviewScreen : public UIScreen {
   };
   #define MAX_UNREAD_MSGS   32
   int num_unread;
-  int head = MAX_UNREAD_MSGS - 1; // index of latest unread message
   MsgEntry unread[MAX_UNREAD_MSGS];
 
 public:
   MsgPreviewScreen(UITask* task, mesh::RTCClock* rtc) : _task(task), _rtc(rtc) { num_unread = 0; }
 
   void addPreview(uint8_t path_len, const char* from_name, const char* msg) {
-    head = (head + 1) % MAX_UNREAD_MSGS;
-    if (num_unread < MAX_UNREAD_MSGS) num_unread++;
+    if (num_unread >= MAX_UNREAD_MSGS) return;  // full
 
-    auto p = &unread[head];
+    auto p = &unread[num_unread++];
     p->timestamp = _rtc->getCurrentTime();
     if (path_len == 0xFF) {
       sprintf(p->origin, "(D) %s:", from_name);
@@ -522,7 +523,7 @@ public:
     sprintf(tmp, "Unread: %d", num_unread);
     display.print(tmp);
 
-    auto p = &unread[head];
+    auto p = &unread[0];
 
     int secs = _rtc->getCurrentTime() - p->timestamp;
     if (secs < 60) {
@@ -558,10 +559,14 @@ public:
 
   bool handleInput(char c) override {
     if (c == KEY_NEXT || c == KEY_RIGHT) {
-      head = (head + MAX_UNREAD_MSGS - 1) % MAX_UNREAD_MSGS;
       num_unread--;
       if (num_unread == 0) {
         _task->gotoHomeScreen();
+      } else {
+        // delete first/curr item from unread queue
+        for (int i = 0; i < num_unread; i++) {
+          unread[i] = unread[i + 1];
+        }
       }
       return true;
     }
@@ -587,19 +592,6 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 #endif
 
   _node_prefs = node_prefs;
-
-#if ENV_INCLUDE_GPS == 1
-  // Apply GPS preferences from stored prefs
-  if (_sensors != NULL && _node_prefs != NULL) {
-    _sensors->setSettingValue("gps", _node_prefs->gps_enabled ? "1" : "0");
-    if (_node_prefs->gps_interval > 0) {
-      char interval_str[12];  // Max: 24 hours = 86400 seconds (5 digits + null)
-      sprintf(interval_str, "%u", _node_prefs->gps_interval);
-      _sensors->setSettingValue("gps_interval", interval_str);
-    }
-  }
-#endif
-
   if (_display != NULL) {
     _display->turnOn();
   }
@@ -671,13 +663,9 @@ void UITask::newMsg(uint8_t path_len, const char* from_name, const char* text, i
   setCurrScreen(msg_preview);
 
   if (_display != NULL) {
-    if (!_display->isOn() && !hasConnection()) {
-      _display->turnOn();
-    }
-    if (_display->isOn()) {
+    if (!_display->isOn()) _display->turnOn();
     _auto_off = millis() + AUTO_OFF_MILLIS;  // extend the auto-off timer
     _next_refresh = 100;  // trigger refresh
-    }
   }
 }
 
@@ -742,8 +730,29 @@ bool UITask::isButtonPressed() const {
 #endif
 }
 
+
+  void UITask::connectionStateChanged() {
+  if (_display != NULL) {
+    if (!_display->isOn()) {
+      _display->turnOn();
+    }
+    _auto_off = millis() + AUTO_OFF_MILLIS;
+    _next_refresh = 0; // força refresh imediato
+  }
+}
 void UITask::loop() {
   char c = 0;
+
+  // detectar mudança de estado de ligação (app conectada/desconectada)
+  static bool last_connected = false;
+  bool now_connected = hasConnection();   // já existe, o HomeScreen usa isto
+
+  if (now_connected != last_connected) {
+    last_connected = now_connected;
+    connectionStateChanged();
+  }
+
+
 #if UI_HAS_JOYSTICK
   int ev = user_btn.check();
   if (ev == BUTTON_EVENT_CLICK) {
@@ -930,15 +939,13 @@ void UITask::toggleGPS() {
       if (strcmp(_sensors->getSettingName(i), "gps") == 0) {
         if (strcmp(_sensors->getSettingValue(i), "1") == 0) {
           _sensors->setSettingValue("gps", "0");
-          _node_prefs->gps_enabled = 0;
           notify(UIEventType::ack);
+          showAlert("GPS: Disabled", 800);
         } else {
           _sensors->setSettingValue("gps", "1");
-          _node_prefs->gps_enabled = 1;
           notify(UIEventType::ack);
+          showAlert("GPS: Enabled", 800);
         }
-        the_mesh.savePrefs();
-        showAlert(_node_prefs->gps_enabled ? "GPS: Enabled" : "GPS: Disabled", 800);
         _next_refresh = 0;
         break;
       }
@@ -947,50 +954,18 @@ void UITask::toggleGPS() {
 }
 
 void UITask::toggleBuzzer() {
-  // Toggle buzzer quiet mode
-#ifdef PIN_BUZZER
-  if (buzzer.isQuiet()) {
-    buzzer.quiet(false);
-    notify(UIEventType::ack);
-  } else {
-    buzzer.quiet(true);
-  }
-  _node_prefs->buzzer_quiet = buzzer.isQuiet();
-  the_mesh.savePrefs();
-  showAlert(buzzer.isQuiet() ? "Buzzer: OFF" : "Buzzer: ON", 800);
-  _next_refresh = 0;  // trigger refresh
-#endif
-}   // <-- FECHA A FUNÇÃO AQUI
-
-
-// ===============================
-// WiFi Support (fora de qualquer função)
-// ===============================
-
-bool UITask::isWifiEnabled() {
-#ifdef WIFI_SSID
-  return WiFi.status() == WL_CONNECTED;
-#else
-  return false;
-#endif
-}
-
-void UITask::enableWifi() {
-#ifdef WIFI_SSID
-  WiFi.mode(WIFI_STA);
-  #ifdef WIFI_PASSWORD
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  #else
-    WiFi.begin(WIFI_SSID);
+    // Toggle buzzer quiet mode
+  #ifdef PIN_BUZZER
+    if (buzzer.isQuiet()) {
+      buzzer.quiet(false);
+      notify(UIEventType::ack);
+      showAlert("Buzzer: ON", 800);
+    } else {
+      buzzer.quiet(true);
+      showAlert("Buzzer: OFF", 800);
+    }
+    _node_prefs->buzzer_quiet = buzzer.isQuiet();
+    the_mesh.savePrefs();
+    _next_refresh = 0;  // trigger refresh
   #endif
-#endif
 }
-
-
-void UITask::disableWifi() {
-#ifdef WIFI_SSID
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
-#endif
-}
-

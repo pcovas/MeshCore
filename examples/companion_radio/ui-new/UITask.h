@@ -26,7 +26,7 @@
 class UITask : public AbstractUITask {
   DisplayDriver* _display;
   SensorManager* _sensors;
-
+void connectionStateChanged();
 #ifdef PIN_BUZZER
   genericBuzzer buzzer;
 #endif
