@@ -162,7 +162,7 @@ protected:
 
 public:
   void savePrefs() { _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon); }
-
+  
 private:
   void writeOKFrame();
   void writeErrFrame(uint8_t err_code);

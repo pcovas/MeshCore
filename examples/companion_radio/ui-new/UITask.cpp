@@ -94,6 +94,7 @@ class HomeScreen : public UIScreen {
     SENSORS,
 #endif
     WIFI_IP,
+    REPEATER,
     TRANSPORT, 
     SHUTDOWN,
     Count    // keep as last
@@ -266,7 +267,19 @@ public:
 
     const char* ip = g_wifi_ip.length() ? g_wifi_ip.c_str() : "No IP";
     display.setCursor(0, 32);
-    display.print(ip);   
+    display.print(ip);
+  } else if (_page == HomePage::REPEATER) {
+    display.setColor(DisplayDriver::GREEN);
+    display.setTextSize(2);
+
+    if (_node_prefs->client_repeat) {
+        display.drawTextCentered(display.width()/2, 28, "Repeater ON");
+    } else {
+        display.drawTextCentered(display.width()/2, 28, "Repeater OFF");
+    }
+
+    display.setTextSize(1);
+    display.drawTextCentered(display.width()/2, 64 - 11, "toggle: " PRESS_LABEL); 
   } else if (_page == HomePage::RADIO) {
       display.setColor(DisplayDriver::YELLOW);
       display.setTextSize(1);
@@ -426,20 +439,17 @@ public:
       _page = (_page + HomePage::Count - 1) % HomePage::Count;
       return true;
     }
-    if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {
-    if (serial_interface.mode == MultiInterface::Mode::BLE &&
-        serial_interface.wifi != nullptr &&
-        WiFi.status() == WL_CONNECTED) {
-     serial_interface.setMode(MultiInterface::Mode::WIFI);
-     _task->showAlert("WiFi selected", 800);
-    } else if (serial_interface.mode == MultiInterface::Mode::WIFI &&
-              serial_interface.ble != nullptr) {
-     serial_interface.setMode(MultiInterface::Mode::BLE);
-     _task->showAlert("BLE selected", 800);
-   } else {
-     _task->showAlert("No alternative", 800);
-   }
-   return true;
+    if (c == KEY_ENTER && _page == HomePage::REPEATER) {
+    _node_prefs->client_repeat = !_node_prefs->client_repeat;
+
+    the_mesh.savePrefs();
+
+    _task->notify(UIEventType::ack);
+    _task->showAlert(
+        _node_prefs->client_repeat ? "Rpt ON" : "Rpt OFF",
+        800
+    );
+    return true;
     }
     if (c == KEY_NEXT || c == KEY_RIGHT) {
       _page = (_page + 1) % HomePage::Count;

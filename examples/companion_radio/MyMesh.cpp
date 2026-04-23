@@ -470,9 +470,14 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet* packet) {
   return false;
 }
 
-bool MyMesh::allowPacketForward(const mesh::Packet* packet) {
-  return _prefs.client_repeat != 0;
+bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
+    if (_prefs.client_repeat == 0) {
+        return false;
+    }
+    return true;
 }
+
+
 
 void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, uint32_t delay_millis) {
   // TODO: dynamic send_scope, depending on recipient and current 'home' Region
