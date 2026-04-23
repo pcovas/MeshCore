@@ -25,10 +25,15 @@ struct NodePrefs {  // persisted to file
   uint32_t ble_pin;
   uint8_t  advert_loc_policy;
   uint8_t  buzzer_quiet;
-  uint8_t  gps_enabled;      // GPS enabled flag (0=disabled, 1=enabled)
-  uint32_t gps_interval;     // GPS read interval in seconds
-  uint8_t autoadd_config;    // bitmask for auto-add contacts config
+  uint8_t  gps_enabled;
+  uint32_t gps_interval;
+  uint8_t autoadd_config;
   uint8_t client_repeat;
-  uint8_t path_hash_mode;    // which path mode to use when sending
-  uint8_t autoadd_max_hops;  // 0 = no limit, 1 = direct (0 hops), N = up to N-1 hops (max 64)
+  uint8_t path_hash_mode;
+  uint8_t autoadd_max_hops;
+
+  // novos campos vindos do repeater
+  uint8_t disable_fwd;   // 0 = forwarding ON, 1 = OFF
+  uint8_t flood_max;     // max hops para FLOOD
+  uint8_t loop_detect;   // modo de deteção de loops
 };

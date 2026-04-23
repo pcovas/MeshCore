@@ -137,6 +137,14 @@
 #define AUTO_ADD_ROOM_SERVER      (1 << 3)  // 0x08 - auto-add Room Server (ADV_TYPE_ROOM)
 #define AUTO_ADD_SENSOR           (1 << 4)  // 0x10 - auto-add Sensor (ADV_TYPE_SENSOR)
 
+// Loop detection tables (copiados do repeater)
+static uint8_t max_loop_minimal[]  = { 0, 4, 2, 1 };
+static uint8_t max_loop_moderate[] = { 0, 2, 1, 1 };
+static uint8_t max_loop_strict[]   = { 0, 1, 1, 1 };
+
+
+
+
 void MyMesh::writeOKFrame() {
   uint8_t buf[1];
   buf[0] = RESP_CODE_OK;
@@ -470,12 +478,58 @@ bool MyMesh::filterRecvFloodPacket(mesh::Packet* packet) {
   return false;
 }
 
+bool MyMesh::isLooped(const mesh::Packet* packet, const uint8_t max_counters[]) {
+    uint8_t hash_size = packet->getPathHashSize();
+    uint8_t hash_count = packet->getPathHashCount();
+    uint8_t n = 0;
+    const uint8_t* path = packet->path;
+
+    while (hash_count > 0) {
+        if (self_id.isHashMatch(path, hash_size)) n++;
+        hash_count--;
+        path += hash_size;
+    }
+
+    return n >= max_counters[hash_size];
+}
+
+
+
 bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
-    if (_prefs.client_repeat == 0) {
+    // 1. Forwarding OFF (UI → client_repeat → disable_fwd)
+    if (_prefs.disable_fwd) {
         return false;
     }
+
+    // 2. Limite de hops (flood_max)
+    if (packet->isRouteFlood() && packet->getPathHashCount() >= _prefs.flood_max) {
+        return false;
+    }
+
+  
+
+    // 4. Loop detection (copiado do repeater)
+    if (packet->isRouteFlood() && _prefs.loop_detect != 0) {
+        const uint8_t* maximums;
+
+        if (_prefs.loop_detect == 1) {          // LOOP_DETECT_MINIMAL
+            maximums = max_loop_minimal;
+        } else if (_prefs.loop_detect == 2) {   // LOOP_DETECT_MODERATE
+            maximums = max_loop_moderate;
+        } else {                                // LOOP_DETECT_STRICT
+            maximums = max_loop_strict;
+        }
+
+        if (isLooped(packet, maximums)) {
+            MESH_DEBUG_PRINTLN("allowPacketForward: loop detectado!");
+            return false;
+        }
+    }
+
+    // 5. Caso contrário → forward permitido
     return true;
 }
+
 
 
 
@@ -853,6 +907,23 @@ void MyMesh::begin(bool has_display) {
 
   // load persisted prefs
   _store->loadPrefs(_prefs, sensors.node_lat, sensors.node_lon);
+
+// FASE 2: Defaults repeater
+
+  if (_prefs.flood_max == 0) {
+    _prefs.flood_max = 10;   // valor típico do repeater
+  }
+
+  if (_prefs.loop_detect == 0) {
+    _prefs.loop_detect = 1;  // LOOP_DETECT_MINIMAL
+  }
+
+  if (_prefs.disable_fwd > 1) {
+    _prefs.disable_fwd = 0;  // segurança
+  }
+// UI: client_repeat = 1 → repeater ON
+//     client_repeat = 0 → repeater OFF
+  _prefs.disable_fwd = (_prefs.client_repeat == 0);
 
   // sanitise bad pref values
   _prefs.rx_delay_base = constrain(_prefs.rx_delay_base, 0, 20.0f);

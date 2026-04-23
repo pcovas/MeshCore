@@ -164,6 +164,8 @@ public:
   void savePrefs() { _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon); }
   
 private:
+  bool isLooped(const mesh::Packet* packet, const uint8_t max_counters[]);
+
   void writeOKFrame();
   void writeErrFrame(uint8_t err_code);
   void writeDisabledFrame();

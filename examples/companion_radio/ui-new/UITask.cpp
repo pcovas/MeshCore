@@ -273,9 +273,9 @@ public:
     display.setTextSize(2);
 
     if (_node_prefs->client_repeat) {
-        display.drawTextCentered(display.width()/2, 28, "Repeater ON");
+        display.drawTextCentered(display.width()/2, 28, "Rpt ON");
     } else {
-        display.drawTextCentered(display.width()/2, 28, "Repeater OFF");
+        display.drawTextCentered(display.width()/2, 28, "Rpt OFF");
     }
 
     display.setTextSize(1);
