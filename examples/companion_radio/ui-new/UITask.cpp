@@ -451,6 +451,25 @@ public:
     );
     return true;
     }
+    if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {
+    if (serial_interface.mode == MultiInterface::Mode::BLE &&
+        serial_interface.wifi != nullptr &&
+        WiFi.status() == WL_CONNECTED) {
+
+        serial_interface.setMode(MultiInterface::Mode::WIFI);
+        _task->showAlert("WiFi selected", 800);
+
+    } else if (serial_interface.mode == MultiInterface::Mode::WIFI &&
+               serial_interface.ble != nullptr) {
+
+        serial_interface.setMode(MultiInterface::Mode::BLE);
+        _task->showAlert("BLE selected", 800);
+
+    } else {
+        _task->showAlert("No alternative", 800);
+    }
+    return true;
+    }
     if (c == KEY_NEXT || c == KEY_RIGHT) {
       _page = (_page + 1) % HomePage::Count;
       if (_page == HomePage::RECENT) {
