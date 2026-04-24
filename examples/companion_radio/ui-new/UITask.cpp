@@ -4,7 +4,7 @@
 #include "target.h"
 #include "helpers/esp32/MultiInterface.h"
 #include <WiFi.h>
-
+#include "helpers/esp32/PAControl.h"
 
 
 extern String g_wifi_ip;  
@@ -292,10 +292,13 @@ public:
       sprintf(tmp, "BW: %03.2f     CR: %d", _node_prefs->bw, _node_prefs->cr);
       display.print(tmp);
 
-      // tx power,  noise floor
+      // tx power, PA,  noise floor
       display.setCursor(0, 42);
-      sprintf(tmp, "TX: %ddBm", _node_prefs->tx_power_dbm);
+      sprintf(tmp, "TX: %ddBm   PA: %s",
+        _node_prefs->tx_power_dbm,
+        _node_prefs->pa_enabled ? "ON" : "OFF");
       display.print(tmp);
+
       display.setCursor(0, 53);
       sprintf(tmp, "Noise floor: %d", radio_driver.getNoiseFloor());
       display.print(tmp);
@@ -449,6 +452,20 @@ public:
         _node_prefs->client_repeat ? "Rpt ON" : "Rpt OFF",
         800
     );
+    return true;
+    }
+    if (c == KEY_ENTER && _page == HomePage::RADIO) {
+    _node_prefs->pa_enabled = !_node_prefs->pa_enabled;
+
+    if (_node_prefs->pa_enabled) {
+        paOn();
+        _task->showAlert("PA ON (28 dBm)", 800);
+    } else {
+        paOff();
+        _task->showAlert("PA OFF (22 dBm)", 800);
+    }
+
+    the_mesh.savePrefs();
     return true;
     }
     if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {

@@ -2,6 +2,7 @@
 
 #include <Arduino.h> // needed for PlatformIO
 #include <Mesh.h>
+#include "helpers/esp32/PAControl.h"
 
 #define CMD_APP_START                 1
 #define CMD_SEND_TXT_MSG              2
@@ -877,6 +878,7 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _prefs.bw = LORA_BW;
   _prefs.cr = LORA_CR;
   _prefs.tx_power_dbm = LORA_TX_POWER;
+  _prefs.pa_enabled = true;     // PA ON por defeito
   _prefs.gps_enabled = 0;       // GPS disabled by default
   _prefs.gps_interval = 0;      // No automatic GPS updates by default
   //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
@@ -884,6 +886,13 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
 
 void MyMesh::begin(bool has_display) {
   BaseChatMesh::begin();
+  
+  // Aplicar estado do PA guardado em prefs
+  if (_prefs.pa_enabled) {
+     paOn();
+  } else {
+     paOff();
+  }
 
   if (!_store->loadMainIdentity(self_id)) {
     self_id = radio_new_identity(); // create new random identity

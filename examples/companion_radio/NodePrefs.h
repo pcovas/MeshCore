@@ -8,6 +8,7 @@
 #define ADVERT_LOC_NONE       0
 #define ADVERT_LOC_SHARE      1
 
+
 struct NodePrefs {  // persisted to file
   float airtime_factor;
   char node_name[32];
@@ -31,9 +32,11 @@ struct NodePrefs {  // persisted to file
   uint8_t client_repeat;
   uint8_t path_hash_mode;
   uint8_t autoadd_max_hops;
-
+  
   // novos campos vindos do repeater
   uint8_t disable_fwd;   // 0 = forwarding ON, 1 = OFF
   uint8_t flood_max;     // max hops para FLOOD
   uint8_t loop_detect;   // modo de deteção de loops
+  //ativar PA  
+  bool pa_enabled = true;
 };
