@@ -9,7 +9,21 @@
 #include "helpers/esp32/SerialWifiInterface.h"
 #include "helpers/esp32/MultiInterface.h"
 
+
+#include "NodePrefs.h"
+
+#ifdef WITH_ESPNOW_BRIDGE
+extern "C" void enableEspNowBridge();
+extern "C" void espnowBridgeLoop();
+#endif
+
+
+
+
 #define DEBUG_SERIAL Serial
+
+
+
 
 String g_wifi_ip = "";
 
@@ -91,9 +105,17 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.println("USB OK");
+  the_mesh.begin(true);
 
+  #ifdef WITH_ESPNOW_BRIDGE
+    enableEspNowBridge();
+  #endif
+
+
+
+  
   DEBUG_SERIAL.begin(115200);
-  delay(200);
+  delay(200); 
   DEBUG_SERIAL.println("Debug ativo");
 
   board.begin();
@@ -212,5 +234,9 @@ void loop() {
   ui_task.loop();
 #endif
 
+  // ESP-NOW bridge loop
+#ifdef WITH_ESPNOW_BRIDGE
+  espnowBridgeLoop();
+#endif
   rtc_clock.tick();
 }

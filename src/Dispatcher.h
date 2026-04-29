@@ -95,6 +95,7 @@ public:
   virtual Packet* removeOutboundByIdx(int i) = 0;
   virtual void queueInbound(Packet* packet, uint32_t scheduled_for) = 0;
   virtual Packet* getNextInbound(uint32_t now) = 0;
+
 };
 
 typedef uint32_t  DispatcherAction;
@@ -164,6 +165,7 @@ public:
   void begin();
   void loop();
 
+  PacketManager* getPacketManager() const { return _mgr; }
   Packet* obtainNewPacket();
   void releasePacket(Packet* packet);
   void sendPacket(Packet* packet, uint8_t priority, uint32_t delay_millis=0);

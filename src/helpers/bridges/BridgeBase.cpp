@@ -1,6 +1,8 @@
 #include "BridgeBase.h"
-
 #include <Arduino.h>
+#include "Mesh.h"
+#include "Packet.h"
+
 
 bool BridgeBase::isRunning() const {
   return _initialized;

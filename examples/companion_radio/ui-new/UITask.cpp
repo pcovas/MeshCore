@@ -10,6 +10,10 @@
 extern String g_wifi_ip;  
 extern MultiInterface serial_interface;   // ou um getter se preferires esconder global
 
+extern "C" void enableEspNowBridge(NodePrefs* prefs, mesh::PacketManager* mgr);
+extern "C" void disableEspNowBridge();
+extern "C" void espnowBridgeLoop();
+
 
 #ifndef AUTO_OFF_MILLIS
   #define AUTO_OFF_MILLIS     15000   // 15 seconds
