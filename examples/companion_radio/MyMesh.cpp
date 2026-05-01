@@ -4,6 +4,9 @@
 #include <Mesh.h>
 #include "helpers/esp32/PAControl.h"
 
+#include "helpers/bridges/ESPNowBridge.h"
+
+
 #define CMD_APP_START                 1
 #define CMD_SEND_TXT_MSG              2
 #define CMD_SEND_CHANNEL_TXT_MSG      3
@@ -561,6 +564,11 @@ bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
 
 void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, uint32_t delay_millis) {
   // TODO: dynamic send_scope, depending on recipient and current 'home' Region
+  #ifdef WITH_ESPNOW_BRIDGE
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+    #endif
   if (send_scope.isNull()) {
     sendFlood(pkt, delay_millis, _prefs.path_hash_mode + 1);
   } else {
@@ -572,6 +580,11 @@ void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, ui
 }
 void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pkt, uint32_t delay_millis) {
   // TODO: have per-channel send_scope
+  #ifdef WITH_ESPNOW_BRIDGE
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+  #endif
   if (send_scope.isNull()) {
     sendFlood(pkt, delay_millis, _prefs.path_hash_mode + 1);
   } else {
@@ -584,18 +597,33 @@ void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pk
 
 void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                            const char *text) {
+    #ifdef WITH_ESPNOW_BRIDGE                        
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+  #endif
   markConnectionActive(from); // in case this is from a server, and we have a connection
   queueMessage(from, TXT_TYPE_PLAIN, pkt, sender_timestamp, NULL, 0, text);
 }
 
 void MyMesh::onCommandDataRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                const char *text) {
+    #ifdef WITH_ESPNOW_BRIDGE                            
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+  #endif
   markConnectionActive(from); // in case this is from a server, and we have a connection
   queueMessage(from, TXT_TYPE_CLI_DATA, pkt, sender_timestamp, NULL, 0, text);
 }
 
 void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                  const uint8_t *sender_prefix, const char *text) {
+  #ifdef WITH_ESPNOW_BRIDGE                             
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+  #endif
   markConnectionActive(from);
   // from.sync_since change needs to be persisted
   dirty_contacts_expiry = futureMillis(LAZY_CONTACTS_WRITE_DELAY);
@@ -604,6 +632,11 @@ void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uin
 
 void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint32_t timestamp,
                                   const char *text) {
+  #ifdef WITH_ESPNOW_BRIDGE                                
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(pkt);
+    }
+  #endif
   int i = 0;
   if (app_target_ver >= 3) {
     out_frame[i++] = RESP_CODE_CHANNEL_MSG_RECV_V3;
@@ -819,6 +852,11 @@ void MyMesh::onControlDataRecv(mesh::Packet *packet) {
 }
 
 void MyMesh::onRawDataRecv(mesh::Packet *packet) {
+  #ifdef WITH_ESPNOW_BRIDGE
+    if (_bridge && _bridge->isRunning()) {
+        _bridge->onPacketReceived(packet);
+    }
+  #endif
   if (packet->payload_len + 4 > sizeof(out_frame)) {
     MESH_DEBUG_PRINTLN("onRawDataRecv(), payload_len too long: %d", packet->payload_len);
     return;
@@ -989,6 +1027,15 @@ void MyMesh::begin(bool has_display) {
     bootstrapRTCfromContacts();
     addChannel("Public", PUBLIC_GROUP_PSK);
     _store->loadChannels(this);
+
+    //BRIDGE
+
+#ifdef WITH_ESPNOW_BRIDGE
+    _bridge = new ESPNowBridge(&_prefs, _mgr, getRTCClock());
+    _bridge->begin();
+#endif
+
+
 }
 
 
@@ -2100,6 +2147,10 @@ void MyMesh::checkSerialInterface() {
 void MyMesh::loop() {
     BaseChatMesh::loop();
 
+#ifdef WITH_ESPNOW_BRIDGE
+    if (_bridge) _bridge->loop();
+#endif
+
     if (_cli_rescue) {
         checkCLIRescueCmd();
     } else {
@@ -2117,6 +2168,7 @@ void MyMesh::loop() {
     }
 #endif
 }
+
 
 
 

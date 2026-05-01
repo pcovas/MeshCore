@@ -10,7 +10,7 @@
 #endif
 
 #include "../AbstractUITask.h"
-#include "../NodePrefs.h"
+#include "NodePrefs.h"
 
 #include "Button.h"
 

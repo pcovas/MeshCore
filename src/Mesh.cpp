@@ -694,7 +694,6 @@ void Mesh::sendZeroHop(Packet* packet, uint32_t delay_millis) {
   packet->path_len = 0;  // path_len of zero means Zero Hop
 
   _tables->hasSeen(packet); // mark this packet as already sent in case it is rebroadcast back to us
-
   sendPacket(packet, 0, delay_millis);
 }
 
@@ -707,7 +706,6 @@ void Mesh::sendZeroHop(Packet* packet, uint16_t* transport_codes, uint32_t delay
   packet->path_len = 0;  // path_len of zero means Zero Hop
 
   _tables->hasSeen(packet); // mark this packet as already sent in case it is rebroadcast back to us
-
   sendPacket(packet, 0, delay_millis);
 }
 

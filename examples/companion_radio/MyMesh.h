@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include <Mesh.h>
 #include "AbstractUITask.h"
+#include "helpers/AbstractBridge.h"
+#include "helpers/bridges/ESPNowBridge.h"   // ou o nome correto
+
 
 /*------------ Frame Protocol --------------*/
 #define FIRMWARE_VER_CODE 10
@@ -76,6 +79,10 @@
 #define REQ_TYPE_KEEP_ALIVE             0x02
 #define REQ_TYPE_GET_TELEMETRY_DATA     0x03
 
+
+
+
+
 struct AdvertPath {
   uint8_t pubkey_prefix[7];
   uint8_t path_len;
@@ -101,8 +108,11 @@ public:
   void enterCLIRescue();
 
   int  getRecentlyHeard(AdvertPath dest[], int max_num);
+  #ifdef WITH_ESPNOW_BRIDGE
+    AbstractBridge* _bridge = nullptr;
+  #endif
 
-protected:
+  protected:
   float getAirtimeBudgetFactor() const override;
   int getInterferenceThreshold() const override;
   int calcRxDelay(float score, uint32_t air_time) const override;

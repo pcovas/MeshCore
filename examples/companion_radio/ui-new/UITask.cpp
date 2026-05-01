@@ -9,8 +9,9 @@
 
 extern String g_wifi_ip;  
 extern MultiInterface serial_interface;   // ou um getter se preferires esconder global
+extern bool espnow_active;
 
-extern "C" void enableEspNowBridge(NodePrefs* prefs, mesh::PacketManager* mgr);
+extern "C" void enableEspNowBridge(); 
 extern "C" void disableEspNowBridge();
 extern "C" void espnowBridgeLoop();
 
@@ -99,6 +100,7 @@ class HomeScreen : public UIScreen {
 #endif
     WIFI_IP,
     REPEATER,
+    BRIDGE,
     TRANSPORT, 
     SHUTDOWN,
     Count    // keep as last
@@ -284,6 +286,16 @@ public:
 
     display.setTextSize(1);
     display.drawTextCentered(display.width()/2, 64 - 11, "toggle: " PRESS_LABEL); 
+      } else if (_page == HomePage::BRIDGE) {
+      display.setColor(DisplayDriver::GREEN);
+      display.setTextSize(2);
+      display.drawTextCentered(
+        display.width() / 2,
+        28,
+        espnow_active ? "ESP-NOW ON" : "ESP-NOW OFF"
+      );
+      display.setTextSize(1);
+      display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
   } else if (_page == HomePage::RADIO) {
       display.setColor(DisplayDriver::YELLOW);
       display.setTextSize(1);
@@ -470,6 +482,16 @@ public:
     }
 
     the_mesh.savePrefs();
+    return true;
+    }
+    if (c == KEY_ENTER && _page == HomePage::BRIDGE) {
+    if (!espnow_active) {
+        enableEspNowBridge();
+        _task->showAlert("ESP-NOW ON", 800);
+    } else {
+        disableEspNowBridge();
+        _task->showAlert("ESP-NOW OFF", 800);
+    }
     return true;
     }
     if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {

@@ -9,7 +9,14 @@
 
 DataStore store(SPIFFS, rtc_clock);
 
+#if defined(HELTEC_LORA_V3)
 extern HeltecV3Board board;
+#elif defined(HELTEC_LORA_V4)
+extern HeltecV4Board board;
+#else
+#error "Nenhuma board definida! Define HELTEC_LORA_V3 ou HELTEC_LORA_V4"
+#endif
+
 extern WRAPPER_CLASS radio_driver;
 extern AutoDiscoverRTCClock rtc_clock;
 extern SimpleMeshTables tables;
@@ -53,7 +60,7 @@ void setup() {
     } else {
         Serial.println("SX1262 init OK");
     }
-    
+
     // carregar prefs
     NodePrefs* prefs = the_mesh.getNodePrefs();
 

@@ -21,7 +21,7 @@
 #endif
 
 #include "../AbstractUITask.h"
-#include "../NodePrefs.h"
+#include "NodePrefs.h"
 
 class UITask : public AbstractUITask {
   DisplayDriver* _display;

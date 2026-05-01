@@ -2,6 +2,8 @@
 #include "target.h"
 
 HeltecV4Board board;
+SimpleMeshTables tables;
+
 
 #if defined(P_LORA_SCLK)
   static SPIClass spi;
