@@ -5,18 +5,21 @@
 
 #ifdef WITH_ESPNOW_BRIDGE
 
-// Static member to handle callbacks
 ESPNowBridge *ESPNowBridge::_instance = nullptr;
 
-// Static callback wrappers
+
 void ESPNowBridge::recv_cb(const uint8_t *mac, const uint8_t *data, int32_t len) {
   if (_instance) {
+    Serial.printf("[ESP-NOW][RX-CB] from %02X:%02X:%02X:%02X:%02X:%02X len=%d\n",
+      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], len);
     _instance->onDataRecv(mac, data, len);
   }
 }
 
 void ESPNowBridge::send_cb(const uint8_t *mac, esp_now_send_status_t status) {
   if (_instance) {
+    Serial.printf("[ESP-NOW][TX-CB] to %02X:%02X:%02X:%02X:%02X:%02X status=%d\n",
+      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], status);
     _instance->onDataSent(mac, status);
   }
 }
@@ -27,70 +30,82 @@ ESPNowBridge::ESPNowBridge(NodePrefs *prefs, mesh::PacketManager *mgr, mesh::RTC
 }
 
 void ESPNowBridge::begin() {
-  BRIDGE_DEBUG_PRINTLN("Initializing...\n");
+  Serial.println("[ESP-NOW] Initializing bridge...");
 
-  // Initialize WiFi in station mode
+  Serial.println("[ESP-NOW] Setting WiFi STA mode");
   WiFi.mode(WIFI_STA);
-  
-  // Set wifi channel
-  if (esp_wifi_set_channel(_prefs->bridge_channel, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
-    BRIDGE_DEBUG_PRINTLN("Error setting WIFI channel to %d\n", _prefs->bridge_channel);
+
+  // --- VALIDAR CANAL ---
+int channel = _prefs->bridge_channel;
+if (channel < 1 || channel > 13) {
+    Serial.printf("[ESP-NOW] Invalid channel %d, forcing channel 1\n", channel);
+    channel = 1;
+}
+
+Serial.printf("[ESP-NOW] Setting channel to %d\n", channel);
+esp_err_t ch = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+if (ch != ESP_OK) {
+    Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
+    return;
+}
+
+  if (ch != ESP_OK) {
+    Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
     return;
   }
 
-  // Initialize ESP-NOW
-  if (esp_now_init() != ESP_OK) {
-    BRIDGE_DEBUG_PRINTLN("Error initializing ESP-NOW\n");
+  Serial.println("[ESP-NOW] Calling esp_now_init()");
+  esp_err_t init = esp_now_init();
+  if (init != ESP_OK) {
+    Serial.printf("[ESP-NOW] ERROR esp_now_init(): %d\n", init);
     return;
   }
 
-  // Register callbacks
+  Serial.println("[ESP-NOW] Registering callbacks");
   esp_now_register_recv_cb(recv_cb);
   esp_now_register_send_cb(send_cb);
 
-  // Add broadcast peer
+  Serial.println("[ESP-NOW] Adding broadcast peer");
   esp_now_peer_info_t peerInfo = {};
   memset(&peerInfo, 0, sizeof(peerInfo));
-  memset(peerInfo.peer_addr, 0xFF, ESP_NOW_ETH_ALEN); // Broadcast address
+  memset(peerInfo.peer_addr, 0xFF, ESP_NOW_ETH_ALEN);
   peerInfo.channel = _prefs->bridge_channel;
   peerInfo.encrypt = false;
 
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    BRIDGE_DEBUG_PRINTLN("Failed to add broadcast peer\n");
+  esp_err_t add = esp_now_add_peer(&peerInfo);
+  if (add != ESP_OK) {
+    Serial.printf("[ESP-NOW] ERROR adding broadcast peer: %d\n", add);
     return;
   }
 
-  // Update bridge state
+  Serial.println("[ESP-NOW] Bridge initialized OK");
   _initialized = true;
 }
 
 void ESPNowBridge::end() {
-  BRIDGE_DEBUG_PRINTLN("Stopping...\n");
+  Serial.println("[ESP-NOW] Stopping bridge...");
 
-  // Remove broadcast peer
   uint8_t broadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-  if (esp_now_del_peer(broadcastAddress) != ESP_OK) {
-    BRIDGE_DEBUG_PRINTLN("Error removing broadcast peer\n");
-  }
+  esp_now_del_peer(broadcastAddress);
 
-  // Unregister callbacks
   esp_now_register_recv_cb(nullptr);
   esp_now_register_send_cb(nullptr);
 
-  // Deinitialize ESP-NOW
-  if (esp_now_deinit() != ESP_OK) {
-    BRIDGE_DEBUG_PRINTLN("Error deinitializing ESP-NOW\n");
-  }
+  esp_now_deinit();
 
-  // Turn off WiFi
   WiFi.mode(WIFI_OFF);
 
-  // Update bridge state
+  Serial.println("[ESP-NOW] Bridge stopped");
   _initialized = false;
 }
 
 void ESPNowBridge::loop() {
-  // Nothing to do here - ESP-NOW is callback based
+  // Apenas para debug
+  static uint32_t last = 0;
+  if (millis() - last > 5000) {
+    last = millis();
+    Serial.println("[ESP-NOW] Loop alive");
+  }
 }
 
 void ESPNowBridge::xorCrypt(uint8_t *data, size_t len) {
@@ -101,118 +116,107 @@ void ESPNowBridge::xorCrypt(uint8_t *data, size_t len) {
 }
 
 void ESPNowBridge::onDataRecv(const uint8_t *mac, const uint8_t *data, int32_t len) {
-  // Ignore packets that are too small to contain header + checksum
+  Serial.printf("[ESP-NOW][RX] raw_len=%d\n", len);
+
   if (len < (BRIDGE_MAGIC_SIZE + BRIDGE_CHECKSUM_SIZE)) {
-    BRIDGE_DEBUG_PRINTLN("RX packet too small, len=%d\n", len);
+    Serial.printf("[ESP-NOW][RX] too small (%d)\n", len);
     return;
   }
 
-  // Validate total packet size
   if (len > MAX_ESPNOW_PACKET_SIZE) {
-    BRIDGE_DEBUG_PRINTLN("RX packet too large, len=%d\n", len);
+    Serial.printf("[ESP-NOW][RX] too large (%d)\n", len);
     return;
   }
 
-  // Check packet header magic
-  uint16_t received_magic = (data[0] << 8) | data[1];
-  if (received_magic != BRIDGE_PACKET_MAGIC) {
-    BRIDGE_DEBUG_PRINTLN("RX invalid magic 0x%04X\n", received_magic);
+  uint16_t magic = (data[0] << 8) | data[1];
+  if (magic != BRIDGE_PACKET_MAGIC) {
+    Serial.printf("[ESP-NOW][RX] invalid magic 0x%04X\n", magic);
     return;
   }
 
-  // Make a copy we can decrypt
   uint8_t decrypted[MAX_ESPNOW_PACKET_SIZE];
-  const size_t encryptedDataLen = len - BRIDGE_MAGIC_SIZE;
-  memcpy(decrypted, data + BRIDGE_MAGIC_SIZE, encryptedDataLen);
+  size_t encryptedLen = len - BRIDGE_MAGIC_SIZE;
+  memcpy(decrypted, data + BRIDGE_MAGIC_SIZE, encryptedLen);
 
-  // Try to decrypt (checksum + payload)
-  xorCrypt(decrypted, encryptedDataLen);
+  xorCrypt(decrypted, encryptedLen);
 
-  // Validate checksum
-  uint16_t received_checksum = (decrypted[0] << 8) | decrypted[1];
-  const size_t payloadLen = encryptedDataLen - BRIDGE_CHECKSUM_SIZE;
+  uint16_t checksum = (decrypted[0] << 8) | decrypted[1];
+  size_t payloadLen = encryptedLen - BRIDGE_CHECKSUM_SIZE;
 
-  if (!validateChecksum(decrypted + BRIDGE_CHECKSUM_SIZE, payloadLen, received_checksum)) {
-    // Failed to decrypt - likely from a different network
-    BRIDGE_DEBUG_PRINTLN("RX checksum mismatch, rcv=0x%04X\n", received_checksum);
+  if (!validateChecksum(decrypted + BRIDGE_CHECKSUM_SIZE, payloadLen, checksum)) {
+    Serial.printf("[ESP-NOW][RX] checksum mismatch (0x%04X)\n", checksum);
     return;
   }
 
-  BRIDGE_DEBUG_PRINTLN("RX, payload_len=%d\n", payloadLen);
+  Serial.printf("[ESP-NOW][RX] payload_len=%d\n", payloadLen);
 
-  // Create mesh packet
-  mesh::Packet *pkt = _instance->_mgr->allocNew();
-  if (!pkt) return;
+  mesh::Packet *pkt = _mgr->allocNew();
+  if (!pkt) {
+    Serial.println("[ESP-NOW][RX] allocNew() FAILED");
+    return;
+  }
 
   if (pkt->readFrom(decrypted + BRIDGE_CHECKSUM_SIZE, payloadLen)) {
-    _instance->onPacketReceived(pkt);
+    Serial.println("[ESP-NOW][RX] Packet injected into mesh");
+    onPacketReceived(pkt);
   } else {
-    _instance->_mgr->free(pkt);
+    Serial.println("[ESP-NOW][RX] Packet readFrom() FAILED");
+    _mgr->free(pkt);
   }
 }
 
 void ESPNowBridge::onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  // Could add transmission error handling here if needed
+  Serial.printf("[ESP-NOW][TX] status=%d\n", status);
 }
 
 void ESPNowBridge::sendPacket(mesh::Packet *packet) {
-  // Guard against uninitialized state
-  if (_initialized == false) {
+  if (!_initialized) {
+    Serial.println("[ESP-NOW][TX] Bridge not initialized");
     return;
   }
 
-  // First validate the packet pointer
   if (!packet) {
-    BRIDGE_DEBUG_PRINTLN("TX invalid packet pointer\n");
+    Serial.println("[ESP-NOW][TX] NULL packet");
     return;
   }
 
-  if (!_seen_packets.hasSeen(packet)) {
-    // Create a temporary buffer just for size calculation and reuse for actual writing
-    uint8_t sizingBuffer[MAX_PAYLOAD_SIZE];
-    uint16_t meshPacketLen = packet->writeTo(sizingBuffer);
-
-    // Check if packet fits within our maximum payload size
-    if (meshPacketLen > MAX_PAYLOAD_SIZE) {
-      BRIDGE_DEBUG_PRINTLN("TX packet too large (payload=%d, max=%d)\n", meshPacketLen,
-                           MAX_PAYLOAD_SIZE);
-      return;
-    }
-
-    uint8_t buffer[MAX_ESPNOW_PACKET_SIZE];
-
-    // Write magic header (2 bytes)
-    buffer[0] = (BRIDGE_PACKET_MAGIC >> 8) & 0xFF;
-    buffer[1] = BRIDGE_PACKET_MAGIC & 0xFF;
-
-    // Write packet payload starting after magic header and checksum
-    const size_t packetOffset = BRIDGE_MAGIC_SIZE + BRIDGE_CHECKSUM_SIZE;
-    memcpy(buffer + packetOffset, sizingBuffer, meshPacketLen);
-
-    // Calculate and add checksum (only of the payload)
-    uint16_t checksum = fletcher16(buffer + packetOffset, meshPacketLen);
-    buffer[2] = (checksum >> 8) & 0xFF; // High byte
-    buffer[3] = checksum & 0xFF;        // Low byte
-
-    // Encrypt payload and checksum (not including magic header)
-    xorCrypt(buffer + BRIDGE_MAGIC_SIZE, meshPacketLen + BRIDGE_CHECKSUM_SIZE);
-
-    // Total packet size: magic header + checksum + payload
-    const size_t totalPacketSize = BRIDGE_MAGIC_SIZE + BRIDGE_CHECKSUM_SIZE + meshPacketLen;
-
-    // Broadcast using ESP-NOW
-    uint8_t broadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-    esp_err_t result = esp_now_send(broadcastAddress, buffer, totalPacketSize);
-
-    if (result == ESP_OK) {
-      BRIDGE_DEBUG_PRINTLN("TX, len=%d\n", meshPacketLen);
-    } else {
-      BRIDGE_DEBUG_PRINTLN("TX FAILED!\n");
-    }
+  if (_seen_packets.hasSeen(packet)) {
+    Serial.println("[ESP-NOW][TX] Duplicate packet ignored");
+    return;
   }
+
+  uint8_t sizingBuffer[MAX_PAYLOAD_SIZE];
+  uint16_t meshPacketLen = packet->writeTo(sizingBuffer);
+
+  if (meshPacketLen > MAX_PAYLOAD_SIZE) {
+    Serial.printf("[ESP-NOW][TX] too large (%d)\n", meshPacketLen);
+    return;
+  }
+
+  uint8_t buffer[MAX_ESPNOW_PACKET_SIZE];
+
+  buffer[0] = (BRIDGE_PACKET_MAGIC >> 8) & 0xFF;
+  buffer[1] = BRIDGE_PACKET_MAGIC & 0xFF;
+
+  const size_t offset = BRIDGE_MAGIC_SIZE + BRIDGE_CHECKSUM_SIZE;
+  memcpy(buffer + offset, sizingBuffer, meshPacketLen);
+
+  uint16_t checksum = fletcher16(buffer + offset, meshPacketLen);
+  buffer[2] = (checksum >> 8) & 0xFF;
+  buffer[3] = checksum & 0xFF;
+
+  xorCrypt(buffer + BRIDGE_MAGIC_SIZE, meshPacketLen + BRIDGE_CHECKSUM_SIZE);
+
+  size_t total = BRIDGE_MAGIC_SIZE + BRIDGE_CHECKSUM_SIZE + meshPacketLen;
+
+  uint8_t broadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+  esp_err_t result = esp_now_send(broadcastAddress, buffer, total);
+
+  Serial.printf("[ESP-NOW][TX] len=%d result=%d\n", meshPacketLen, result);
 }
 
 void ESPNowBridge::onPacketReceived(mesh::Packet *packet) {
+  Serial.println("[ESP-NOW][MESH] Packet delivered to mesh");
   handleReceivedPacket(packet);
 }
 

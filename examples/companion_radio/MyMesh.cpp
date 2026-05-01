@@ -144,6 +144,31 @@ static uint8_t max_loop_moderate[] = { 0, 2, 1, 1 };
 static uint8_t max_loop_strict[]   = { 0, 1, 1, 1 };
 
 
+NodePrefs* MyMesh::getNodePrefs() {
+    return &_prefs;
+}
+
+uint32_t MyMesh::getBLEPin() {
+    return _active_ble_pin;
+}
+
+// para configurações de frequencias e validação 
+static const struct {
+    uint32_t lower_freq;
+    uint32_t upper_freq;
+} repeat_freq_ranges[] = {
+    { 433000000, 434000000 },
+    { 863000000, 870000000 },
+    { 902000000, 928000000 }
+};
+
+bool MyMesh::isValidClientRepeatFreq(uint32_t f) const {
+  for (int i = 0; i < sizeof(repeat_freq_ranges)/sizeof(repeat_freq_ranges[0]); i++) {
+    auto r = &repeat_freq_ranges[i];
+    if (f >= r->lower_freq && f <= r->upper_freq) return true;
+  }
+  return false;
+}
 
 
 void MyMesh::writeOKFrame() {
@@ -885,122 +910,88 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
 }
 
 void MyMesh::begin(bool has_display) {
-  BaseChatMesh::begin();
-  
-  // Aplicar estado do PA guardado em prefs
-  if (_prefs.pa_enabled) {
-     paOn();
-  } else {
-     paOff();
-  }
+    
 
-  if (!_store->loadMainIdentity(self_id)) {
-    self_id = radio_new_identity(); // create new random identity
-    int count = 0;
-    while (count < 10 && (self_id.pub_key[0] == 0x00 || self_id.pub_key[0] == 0xFF)) { // reserved id hashes
-      self_id = radio_new_identity();
-      count++;
+    // 1) Identidade
+    if (!_store->loadMainIdentity(self_id)) {
+        self_id = radio_new_identity();
+        int count = 0;
+        while (count < 10 &&
+              (self_id.pub_key[0] == 0x00 || self_id.pub_key[0] == 0xFF)) {
+            self_id = radio_new_identity();
+            count++;
+        }
+        _store->saveMainIdentity(self_id);
     }
-    _store->saveMainIdentity(self_id);
-  }
 
-// if name is provided as a build flag, use that as default node name instead
 #ifdef ADVERT_NAME
-  strcpy(_prefs.node_name, ADVERT_NAME);
+    strcpy(_prefs.node_name, ADVERT_NAME);
 #else
-  // use hex of first 4 bytes of identity public key as default node name
-  char pub_key_hex[10];
-  mesh::Utils::toHex(pub_key_hex, self_id.pub_key, 4);
-  strcpy(_prefs.node_name, pub_key_hex);
+    char pub_key_hex[10];
+    mesh::Utils::toHex(pub_key_hex, self_id.pub_key, 4);
+    strcpy(_prefs.node_name, pub_key_hex);
 #endif
 
-  // load persisted prefs
-  _store->loadPrefs(_prefs, sensors.node_lat, sensors.node_lon);
+    // 2) Carregar prefs reais
+    _store->loadPrefs(_prefs, sensors.node_lat, sensors.node_lon);
 
-// FASE 2: Defaults repeater
+    // 3) Defaults repeater
+    if (_prefs.flood_max == 0) _prefs.flood_max = 10;
+    if (_prefs.loop_detect == 0) _prefs.loop_detect = 1;
+    if (_prefs.disable_fwd > 1) _prefs.disable_fwd = 0;
+    _prefs.disable_fwd = (_prefs.client_repeat == 0);
 
-  if (_prefs.flood_max == 0) {
-    _prefs.flood_max = 10;   // valor típico do repeater
-  }
+    // 4) Sanitizar prefs
+    _prefs.rx_delay_base   = constrain(_prefs.rx_delay_base, 0, 20.0f);
+    _prefs.airtime_factor  = constrain(_prefs.airtime_factor, 0, 9.0f);
+    _prefs.freq            = constrain(_prefs.freq, 400.0f, 2500.0f);
+    _prefs.bw              = constrain(_prefs.bw, 7.8f, 500.0f);
+    _prefs.sf              = constrain(_prefs.sf, 5, 12);
+    _prefs.cr              = constrain(_prefs.cr, 5, 8);
+    _prefs.tx_power_dbm    = constrain(_prefs.tx_power_dbm, -9, MAX_LORA_TX_POWER);
 
-  if (_prefs.loop_detect == 0) {
-    _prefs.loop_detect = 1;  // LOOP_DETECT_MINIMAL
-  }
+    // 5) PA
+    if (_prefs.pa_enabled) paOn();
+    else paOff();
 
-  if (_prefs.disable_fwd > 1) {
-    _prefs.disable_fwd = 0;  // segurança
-  }
-// UI: client_repeat = 1 → repeater ON
-//     client_repeat = 0 → repeater OFF
-  _prefs.disable_fwd = (_prefs.client_repeat == 0);
+    // 6) Aplicar LoRa ao rádio (versão correta para o teu MeshCore)
+    radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
+    radio_set_tx_power(_prefs.tx_power_dbm);
 
-  // sanitise bad pref values
-  _prefs.rx_delay_base = constrain(_prefs.rx_delay_base, 0, 20.0f);
-  _prefs.airtime_factor = constrain(_prefs.airtime_factor, 0, 9.0f);
-  _prefs.freq = constrain(_prefs.freq, 400.0f, 2500.0f);
-  _prefs.bw = constrain(_prefs.bw, 7.8f, 500.0f);
-  _prefs.sf = constrain(_prefs.sf, 5, 12);
-  _prefs.cr = constrain(_prefs.cr, 5, 8);
-  _prefs.tx_power_dbm = constrain(_prefs.tx_power_dbm, -9, MAX_LORA_TX_POWER);
-  _prefs.gps_enabled = constrain(_prefs.gps_enabled, 0, 1);  // Ensure boolean 0 or 1
-  _prefs.gps_interval = constrain(_prefs.gps_interval, 0, 86400);  // Max 24 hours
+    Serial.println("[MyMesh] LoRa config aplicada no arranque");
 
-#ifdef BLE_PIN_CODE // 123456 by default
-  if (_prefs.ble_pin == 0) {
+  //arrancar radio
+    BaseChatMesh::begin();
+
+    // 7) BLE PIN
+#ifdef BLE_PIN_CODE
+    if (_prefs.ble_pin == 0) {
 #ifdef DISPLAY_CLASS
-    if (has_display && BLE_PIN_CODE == 123456) {
-      StdRNG rng;
-      _active_ble_pin = rng.nextInt(100000, 999999); // random pin each session
+        if (has_display && BLE_PIN_CODE == 123456) {
+            StdRNG rng;
+            _active_ble_pin = rng.nextInt(100000, 999999);
+        } else {
+            _active_ble_pin = BLE_PIN_CODE;
+        }
+#else
+        _active_ble_pin = BLE_PIN_CODE;
+#endif
     } else {
-      _active_ble_pin = BLE_PIN_CODE; // otherwise static pin
+        _active_ble_pin = _prefs.ble_pin;
     }
 #else
-    _active_ble_pin = BLE_PIN_CODE; // otherwise static pin
-#endif
-  } else {
-    _active_ble_pin = _prefs.ble_pin;
-  }
-#else
-  _active_ble_pin = 0;
+    _active_ble_pin = 0;
 #endif
 
-  resetContacts();
-  _store->loadContacts(this);
-  bootstrapRTCfromContacts();
-  addChannel("Public", PUBLIC_GROUP_PSK); // pre-configure Andy's public channel
-  _store->loadChannels(this);
-
-  radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
-  radio_set_tx_power(_prefs.tx_power_dbm);
+    // 8) Contacts + Channels
+    resetContacts();
+    _store->loadContacts(this);
+    bootstrapRTCfromContacts();
+    addChannel("Public", PUBLIC_GROUP_PSK);
+    _store->loadChannels(this);
 }
 
-const char *MyMesh::getNodeName() {
-  return _prefs.node_name;
-}
-NodePrefs *MyMesh::getNodePrefs() {
-  return &_prefs;
-}
-uint32_t MyMesh::getBLEPin() {
-  return _active_ble_pin;
-}
 
-struct FreqRange {
-  uint32_t lower_freq, upper_freq;
-};
-
-static FreqRange repeat_freq_ranges[] = {
-  { 433000, 433000 },
-  { 869000, 869000 },
-  { 918000, 918000 }
-};
-
-bool MyMesh::isValidClientRepeatFreq(uint32_t f) const {
-  for (int i = 0; i < sizeof(repeat_freq_ranges)/sizeof(repeat_freq_ranges[0]); i++) {
-    auto r = &repeat_freq_ranges[i];
-    if (f >= r->lower_freq && f <= r->upper_freq) return true;
-  }
-  return false;
-}
 
 void MyMesh::startInterface(BaseSerialInterface &serial) {
   _serial = &serial;
@@ -2079,51 +2070,55 @@ void MyMesh::checkCLIRescueCmd() {
 }
 
 void MyMesh::checkSerialInterface() {
+  // 🔥 Proteção obrigatória
+  if (!_serial) {
+    return;
+  }
+
   size_t len = _serial->checkRecvFrame(cmd_frame);
   if (len > 0) {
     handleCmdFrame(len);
-  } else if (_iter_started              // check if our ContactsIterator is 'running'
-             && !_serial->isWriteBusy() // don't spam the Serial Interface too quickly!
-  ) {
+  } else if (_iter_started && !_serial->isWriteBusy()) {
     ContactInfo contact;
     if (_iter.hasNext(this, contact)) {
-      if (contact.lastmod > _iter_filter_since) { // apply the 'since' filter
+      if (contact.lastmod > _iter_filter_since) {
         writeContactRespFrame(RESP_CODE_CONTACT, contact);
         if (contact.lastmod > _most_recent_lastmod) {
-          _most_recent_lastmod = contact.lastmod; // save for the RESP_CODE_END_OF_CONTACTS frame
+          _most_recent_lastmod = contact.lastmod;
         }
       }
     } else { // EOF
       out_frame[0] = RESP_CODE_END_OF_CONTACTS;
-      memcpy(&out_frame[1], &_most_recent_lastmod,
-             4); // include the most recent lastmod, so app can update their 'since'
+      memcpy(&out_frame[1], &_most_recent_lastmod, 4);
       _serial->writeFrame(out_frame, 5);
       _iter_started = false;
     }
-  //} else if (!_serial->isWriteBusy()) {
-  //  checkConnections();    // TODO - deprecate the 'Connections' stuff
   }
 }
+
 
 void MyMesh::loop() {
-  BaseChatMesh::loop();
+    BaseChatMesh::loop();
 
-  if (_cli_rescue) {
-    checkCLIRescueCmd();
-  } else {
-    checkSerialInterface();
-  }
+    if (_cli_rescue) {
+        checkCLIRescueCmd();
+    } else {
+        checkSerialInterface();
+    }
 
-  // is there are pending dirty contacts write needed?
-  if (dirty_contacts_expiry && millisHasNowPassed(dirty_contacts_expiry)) {
-    saveContacts();
-    dirty_contacts_expiry = 0;
-  }
+    if (dirty_contacts_expiry && millisHasNowPassed(dirty_contacts_expiry)) {
+        saveContacts();
+        dirty_contacts_expiry = 0;
+    }
 
 #ifdef DISPLAY_CLASS
-  if (_ui) _ui->setHasConnection(_serial->isConnected());
+    if (_ui && _serial) {
+        _ui->setHasConnection(_serial->isConnected());
+    }
 #endif
 }
+
+
 
 bool MyMesh::advert() {
   mesh::Packet* pkt;

@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include "target.h"
+#include <helpers/SimpleMeshTables.h>
+
 
 HeltecV3Board board;
+SimpleMeshTables tables;
 
 #if defined(P_LORA_SCLK)
   static SPIClass spi;

@@ -1,0 +1,82 @@
+{
+  "build": {
+    "core": "esp32",
+    "mcu": "esp32s3",
+    "variant": "heltec_v3_companion_radio_ble_wifi",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "arduino": {
+      "ldscript": "esp32s3_out.ld"
+    }
+  },
+
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "lora"
+  ],
+
+  "frameworks": [
+    "arduino"
+  ],
+
+  "upload": {
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "flash_size": "4MB",
+    "require_upload_port": true,
+    "use_1200bps_touch": false
+  },
+
+  "debug": {
+    "openocd_target": "esp32s3.cfg"
+  },
+
+  "name": "Heltec V3 Companion Radio BLE+WiFi",
+  "url": "https://heltec.org",
+  "vendor": "Heltec",
+
+  "lora": {
+    "model": "sx1262",
+    "spi": {
+      "sck": 12,
+      "miso": 13,
+      "mosi": 11
+    },
+    "nss": 10,
+    "rst": 9,
+    "busy": 14,
+    "dio1": 2
+  },
+
+  "display": {
+    "model": "ssd1306",
+    "i2c": {
+      "sda": 17,
+      "scl": 18
+    },
+    "address": "0x3C"
+  },
+
+  "serial": {
+    "rx": 44,
+    "tx": 43
+  },
+
+  "i2c": {
+    "sda": 17,
+    "scl": 18
+  },
+
+  "spi": {
+    "sck": 12,
+    "miso": 13,
+    "mosi": 11
+  },
+
+  "gpio": {
+    "button": 0,
+    "led": 35
+  }
+}

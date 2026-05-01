@@ -32,8 +32,6 @@ class SerialWifiInterface : public BaseSerialInterface {
 
   void clearBuffers() { recv_queue_len = 0; send_queue_len = 0; }
 
-protected:
-
 public:
   SerialWifiInterface() : server(WiFiServer()), client(WiFiClient()) {
     deviceConnected = false;
@@ -44,9 +42,11 @@ public:
     received_frame_header.length = 0;
   }
 
+  void startWifiServer(int port);
+  void stopWifi();
+
   void begin(int port);
 
-  // BaseSerialInterface methods
   void enable() override;
   void disable() override;
   bool isEnabled() const override { return _isEnabled; }
@@ -60,12 +60,3 @@ public:
   bool hasReceivedFrameHeader();
   void resetReceivedFrameHeader();
 };
-
-#if WIFI_DEBUG_LOGGING && ARDUINO
-  #include <Arduino.h>
-  #define WIFI_DEBUG_PRINT(F, ...) Serial.printf("WiFi: " F, ##__VA_ARGS__)
-  #define WIFI_DEBUG_PRINTLN(F, ...) Serial.printf("WiFi: " F "\n", ##__VA_ARGS__)
-#else
-  #define WIFI_DEBUG_PRINT(...) {}
-  #define WIFI_DEBUG_PRINTLN(...) {}
-#endif

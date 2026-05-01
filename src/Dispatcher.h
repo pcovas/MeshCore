@@ -166,6 +166,7 @@ public:
   void loop();
 
   PacketManager* getPacketManager() const { return _mgr; }
+  
   Packet* obtainNewPacket();
   void releasePacket(Packet* packet);
   void sendPacket(Packet* packet, uint8_t priority, uint32_t delay_millis=0);

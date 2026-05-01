@@ -8,6 +8,11 @@
   static UITask ui_task(display);
 #endif
 
+SerialWifiInterface wifi_interface;
+SerialWifiInterface* wifi_iface = &wifi_interface;
+
+
+
 StdRNG fast_rng;
 SimpleMeshTables tables;
 

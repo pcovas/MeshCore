@@ -161,8 +161,11 @@ protected:
   }
 
 public:
-  void savePrefs() { _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon); }
-  
+  void savePrefs() {
+    _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon);
+    radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
+    radio_set_tx_power(_prefs.tx_power_dbm);
+}
 private:
   bool isLooped(const mesh::Packet* packet, const uint8_t max_counters[]);
 
