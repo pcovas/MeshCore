@@ -1,7 +1,7 @@
 #pragma once
 
 #include "helpers/AbstractBridge.h"
-#include "examples/companion_radio/NodePrefs.h"
+#include "NodePrefs.h"
 #include "helpers/SimpleMeshTables.h"
 
 #include <RTClib.h>

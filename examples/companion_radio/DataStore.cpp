@@ -230,6 +230,17 @@ void DataStore::loadPrefsInt(const char *filename, NodePrefs& _prefs, double& no
     file.read((uint8_t *)&_prefs.gps_interval, sizeof(_prefs.gps_interval));               // 86
     file.read((uint8_t *)&_prefs.autoadd_config, sizeof(_prefs.autoadd_config));           // 87
     file.read((uint8_t *)&_prefs.autoadd_max_hops, sizeof(_prefs.autoadd_max_hops));       // 88
+file.read((uint8_t *)&_prefs.disable_fwd, sizeof(_prefs.disable_fwd));
+file.read((uint8_t *)&_prefs.flood_max, sizeof(_prefs.flood_max));
+file.read((uint8_t *)&_prefs.loop_detect, sizeof(_prefs.loop_detect));
+file.read((uint8_t *)&_prefs.pa_enabled, sizeof(_prefs.pa_enabled));
+
+file.read((uint8_t *)&_prefs.bridge_enabled, sizeof(_prefs.bridge_enabled));
+file.read((uint8_t *)&_prefs.bridge_delay, sizeof(_prefs.bridge_delay));
+file.read((uint8_t *)&_prefs.bridge_pkt_src, sizeof(_prefs.bridge_pkt_src));
+file.read((uint8_t *)&_prefs.bridge_baud, sizeof(_prefs.bridge_baud));
+file.read((uint8_t *)&_prefs.bridge_channel, sizeof(_prefs.bridge_channel));
+file.read((uint8_t *)_prefs.bridge_secret, sizeof(_prefs.bridge_secret));
 
     file.close();
   }
@@ -267,6 +278,17 @@ void DataStore::savePrefs(const NodePrefs& _prefs, double node_lat, double node_
     file.write((uint8_t *)&_prefs.gps_interval, sizeof(_prefs.gps_interval));               // 86
     file.write((uint8_t *)&_prefs.autoadd_config, sizeof(_prefs.autoadd_config));           // 87
     file.write((uint8_t *)&_prefs.autoadd_max_hops, sizeof(_prefs.autoadd_max_hops));      // 88
+file.write((uint8_t *)&_prefs.disable_fwd, sizeof(_prefs.disable_fwd));
+file.write((uint8_t *)&_prefs.flood_max, sizeof(_prefs.flood_max));
+file.write((uint8_t *)&_prefs.loop_detect, sizeof(_prefs.loop_detect));
+file.write((uint8_t *)&_prefs.pa_enabled, sizeof(_prefs.pa_enabled));
+
+file.write((uint8_t *)&_prefs.bridge_enabled, sizeof(_prefs.bridge_enabled));
+file.write((uint8_t *)&_prefs.bridge_delay, sizeof(_prefs.bridge_delay));
+file.write((uint8_t *)&_prefs.bridge_pkt_src, sizeof(_prefs.bridge_pkt_src));
+file.write((uint8_t *)&_prefs.bridge_baud, sizeof(_prefs.bridge_baud));
+file.write((uint8_t *)&_prefs.bridge_channel, sizeof(_prefs.bridge_channel));
+file.write((uint8_t *)_prefs.bridge_secret, sizeof(_prefs.bridge_secret));
 
     file.close();
   }

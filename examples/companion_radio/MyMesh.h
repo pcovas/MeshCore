@@ -108,9 +108,12 @@ public:
   void enterCLIRescue();
 
   int  getRecentlyHeard(AdvertPath dest[], int max_num);
-  #ifdef WITH_ESPNOW_BRIDGE
-    AbstractBridge* _bridge = nullptr;
-  #endif
+  #include "helpers/bridges/ESPNowBridge.h"
+  ESPNowBridge* _bridge = nullptr;
+  void setBridgeEnabled(bool en) {
+      _prefs.bridge_enabled = en ? 1 : 0;
+  }
+
 
   protected:
   float getAirtimeBudgetFactor() const override;

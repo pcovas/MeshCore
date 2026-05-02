@@ -9,7 +9,7 @@
 extern MyMesh the_mesh;
 extern SerialWifiInterface* wifi_iface;
 
-bool espnow_active = false;
+bool espnow_active = true;
 
 extern "C" {
     void espnowBridge_init(void* prefs, void* mgr, void* rtc);

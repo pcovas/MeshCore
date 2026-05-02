@@ -485,15 +485,22 @@ public:
     return true;
     }
     if (c == KEY_ENTER && _page == HomePage::BRIDGE) {
+
     if (!espnow_active) {
         enableEspNowBridge();
+        the_mesh.setBridgeEnabled(true);
+        the_mesh.savePrefs();
         _task->showAlert("ESP-NOW ON", 800);
     } else {
         disableEspNowBridge();
+        the_mesh.setBridgeEnabled(false);
+        the_mesh.savePrefs();
         _task->showAlert("ESP-NOW OFF", 800);
     }
+
     return true;
-    }
+}
+
     if (c == KEY_ENTER && _page == HomePage::TRANSPORT) {
     if (serial_interface.mode == MultiInterface::Mode::BLE &&
         serial_interface.wifi != nullptr &&

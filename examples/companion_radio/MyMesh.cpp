@@ -5,6 +5,10 @@
 #include "helpers/esp32/PAControl.h"
 
 #include "helpers/bridges/ESPNowBridge.h"
+#ifdef WITH_ESPNOW_BRIDGE
+extern "C" void enableEspNowBridge();
+extern "C" void disableEspNowBridge();
+#endif
 
 
 #define CMD_APP_START                 1
@@ -597,33 +601,18 @@ void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pk
 
 void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                            const char *text) {
-    #ifdef WITH_ESPNOW_BRIDGE                        
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-  #endif
   markConnectionActive(from); // in case this is from a server, and we have a connection
   queueMessage(from, TXT_TYPE_PLAIN, pkt, sender_timestamp, NULL, 0, text);
 }
 
 void MyMesh::onCommandDataRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                const char *text) {
-    #ifdef WITH_ESPNOW_BRIDGE                            
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-  #endif
   markConnectionActive(from); // in case this is from a server, and we have a connection
   queueMessage(from, TXT_TYPE_CLI_DATA, pkt, sender_timestamp, NULL, 0, text);
 }
 
 void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                  const uint8_t *sender_prefix, const char *text) {
-  #ifdef WITH_ESPNOW_BRIDGE                             
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-  #endif
   markConnectionActive(from);
   // from.sync_since change needs to be persisted
   dirty_contacts_expiry = futureMillis(LAZY_CONTACTS_WRITE_DELAY);
@@ -948,7 +937,6 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
 }
 
 void MyMesh::begin(bool has_display) {
-    
 
     // 1) Identidade
     if (!_store->loadMainIdentity(self_id)) {
@@ -979,6 +967,14 @@ void MyMesh::begin(bool has_display) {
     if (_prefs.disable_fwd > 1) _prefs.disable_fwd = 0;
     _prefs.disable_fwd = (_prefs.client_repeat == 0);
 
+    // default bridge config
+    if (_prefs.bridge_enabled) {
+      if (_prefs.bridge_channel == 0) _prefs.bridge_channel = 1;
+      if (_prefs.bridge_baud == 0) _prefs.bridge_baud = 115200;
+    }
+    if (_prefs.bridge_enabled > 1) _prefs.bridge_enabled = 0;
+
+
     // 4) Sanitizar prefs
     _prefs.rx_delay_base   = constrain(_prefs.rx_delay_base, 0, 20.0f);
     _prefs.airtime_factor  = constrain(_prefs.airtime_factor, 0, 9.0f);
@@ -987,6 +983,18 @@ void MyMesh::begin(bool has_display) {
     _prefs.sf              = constrain(_prefs.sf, 5, 12);
     _prefs.cr              = constrain(_prefs.cr, 5, 8);
     _prefs.tx_power_dbm    = constrain(_prefs.tx_power_dbm, -9, MAX_LORA_TX_POWER);
+    // 4b) Sanitizar prefs da ESP-NOW bridge
+    // se vierem de flash a 0, forçamos defaults seguros
+    if (_prefs.bridge_channel == 0) {
+        _prefs.bridge_channel = 1;   // canal 1 por defeito
+    }
+
+    if (_prefs.bridge_baud == 0) {
+        _prefs.bridge_baud = 115200;
+    }
+
+    // opcional: garantir que o secret está terminado
+    _prefs.bridge_secret[sizeof(_prefs.bridge_secret) - 1] = '\0';
 
     // 5) PA
     if (_prefs.pa_enabled) paOn();
@@ -1028,12 +1036,29 @@ void MyMesh::begin(bool has_display) {
     addChannel("Public", PUBLIC_GROUP_PSK);
     _store->loadChannels(this);
 
-    //BRIDGE
+    // BRIDGE
 
 #ifdef WITH_ESPNOW_BRIDGE
     _bridge = new ESPNowBridge(&_prefs, _mgr, getRTCClock());
     _bridge->begin();
+
+    // aplicar estado e config vindos dos prefs
+    // (se a ESPNowBridge não ler tudo sozinha do &_prefs)
+    // Exemplo – adapta aos métodos reais:
+    // _bridge->setChannel(_prefs.bridge_channel);
+    // _bridge->setBaud(_prefs.bridge_baud);
+    // _bridge->setSecret(_prefs.bridge_secret);
+    // _bridge->setDelay(_prefs.bridge_delay);
+    // _bridge->setPktSource(_prefs.bridge_pkt_src);
+
+if (_prefs.bridge_enabled) {
+    enableEspNowBridge();
+} else {
+    disableEspNowBridge();
+}
+
 #endif
+
 
 
 }

@@ -39,4 +39,17 @@ struct NodePrefs {  // persisted to file
   uint8_t loop_detect;   // modo de deteção de loops
   //ativar PA  
   bool pa_enabled = true;
+
+  //uint16_t bridge_delay;
+  //uint8_t bridge_channel;
+  //char bridge_secret[16];
+// ESP-NOW bridge settings
+uint8_t bridge_enabled = 1;
+uint16_t bridge_delay = 0;
+uint8_t bridge_pkt_src = 0;
+uint32_t bridge_baud = 115200;
+uint8_t bridge_channel = 1;
+char bridge_secret[16] = {0};
+
+
 };

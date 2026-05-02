@@ -47,8 +47,13 @@ void setup() {
     Serial.begin(115200);
     delay(2000);
     Serial.println("BOOT OK");
-
+    
     SPIFFS.begin(true);
+    // ⚠️ Apenas para este boot — reset de prefs
+    //SPIFFS.remove("/prefs.bin");
+    // depois disto, o MyMesh vai criar prefs novos
+    
+    the_mesh.begin(true);
     Serial.println("SPIFFS OK");
 
     board.begin();
