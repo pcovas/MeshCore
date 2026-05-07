@@ -459,17 +459,27 @@ public:
       return true;
     }
     if (c == KEY_ENTER && _page == HomePage::REPEATER) {
+
+    // 1) Atualizar prefs
     _node_prefs->client_repeat = !_node_prefs->client_repeat;
+    _node_prefs->disable_fwd   = _node_prefs->client_repeat ? 0 : 1;
 
     the_mesh.savePrefs();
 
+    // ⭐ 2) Aplicar ao MeshCore em runtime ⭐
+    the_mesh.setClientRepeat(_node_prefs->client_repeat);
+    the_mesh.setDisableFwd(_node_prefs->disable_fwd);
+
+    // 3) UI feedback
     _task->notify(UIEventType::ack);
     _task->showAlert(
         _node_prefs->client_repeat ? "Rpt ON" : "Rpt OFF",
         800
     );
+
     return true;
-    }
+  }
+
     if (c == KEY_ENTER && _page == HomePage::RADIO) {
     _node_prefs->pa_enabled = !_node_prefs->pa_enabled;
 

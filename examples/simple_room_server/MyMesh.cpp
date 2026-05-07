@@ -634,25 +634,9 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
 }
 
 void MyMesh::begin(FILESYSTEM *fs) {
-  mesh::Mesh::begin();
-  _fs = fs;
-  // load persisted prefs
-  _cli.loadPrefs(_fs);
-
-  acl.load(_fs, self_id);
-
-  radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
-  radio_set_tx_power(_prefs.tx_power_dbm);
-
-  updateAdvertTimer();
-  updateFloodAdvertTimer();
-
-  board.setAdcMultiplier(_prefs.adc_multiplier);
-
-#if ENV_INCLUDE_GPS == 1
-  applyGpsPrefs();
-#endif
+    // vazio — tudo é feito no begin(bool)
 }
+
 
 void MyMesh::applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, int timeout_mins) {
   set_radio_at = futureMillis(2000); // give CLI reply some time to be sent back, before applying temp radio params

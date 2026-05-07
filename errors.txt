@@ -1,0 +1,436 @@
+﻿Processing heltec_v4_companion_radio_ble_wifi (board: heltec_v4; platform: platformio/espressif32@6.11.0; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/heltec_v4.html
+PLATFORM: Espressif 32 (6.11.0) > heltec_wifi_lora_32 v4 (16 MB FLASH, 2 MB PSRAM)
+HARDWARE: ESP32S3 240MHz, 2MB RAM, 16MB Flash
+DEBUG: Current (esp-builtin) On-board (esp-builtin) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.20017.241212+sha.dcc1105b 
+ - tool-esptoolpy @ 1.40501.0 (4.5.1) 
+ - toolchain-riscv32-esp @ 8.4.0+2021r2-patch5 
+ - toolchain-xtensa-esp32s3 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 64 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- SPI @ 2.0.0
+|-- Wire @ 2.0.0
+|-- RadioLib @ 7.6.0
+|-- Crypto @ 0.4.0
+|-- RTClib @ 2.1.4
+|-- Melopero RV3028 @ 1.2.0
+|-- CayenneLPP @ 1.6.1
+|-- Adafruit INA3221 Library @ 1.0.1
+|-- Adafruit INA219 @ 1.2.3
+|-- INA226 @ 0.6.6
+|-- Adafruit INA260 Library @ 1.5.3
+|-- Adafruit AHTX0 @ 2.0.6
+|-- Adafruit BME280 Library @ 2.3.0
+|-- Adafruit BMP280 Library @ 2.6.8
+|-- Adafruit SHTC3 Library @ 1.0.2
+|-- Sensirion I2C SHT4x @ 1.1.2
+|-- Arduino_LPS22HB @ 1.0.2
+|-- Adafruit MLX90614 Library @ 2.1.6
+|-- Adafruit_VL53L0X @ 1.2.5
+|-- MicroNMEA @ 2.0.6
+|-- Adafruit BME680 Library @ 2.0.6
+|-- Adafruit BMP085 Library @ 1.2.4
+|-- base64 @ 1.4.0
+|-- LittleFS @ 2.0.0
+|-- SPIFFS @ 2.0.0
+|-- WiFi @ 2.0.0
+|-- ed25519
+|-- nrf52
+|-- ESP32 BLE Arduino @ 2.0.0
+|-- FS @ 2.0.0
+|-- Adafruit GFX Library @ 1.12.6
+|-- Adafruit SSD1306 @ 2.5.16
+Building in release mode
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\examples\companion_radio\DataStore.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\examples\companion_radio\MyMesh.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\examples\companion_radio\bridge_adapter.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\examples\companion_radio\main.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\examples\companion_radio\ui-new\UITask.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\variants\heltec_v4\HeltecV4Board.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\variants\heltec_v4\target.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\Dispatcher.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\Identity.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\Mesh.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\Packet.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\Utils.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\AdvertDataHelpers.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\ArduinoSerialInterface.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\AutoDiscoverRTCClock.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\BaseChatMesh.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\ClientACL.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\CommonCLI.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\ESP32Board.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\IdentityStore.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\NRF52Board.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\RegionMap.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\StaticPoolPacketManager.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\TransportKeyStore.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\TxtDataHelpers.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\bridges\BridgeBase.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\bridges\ESPNowBridge.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\bridges\espnow_control.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\bridges\espnow_core.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\ESPNOWRadio.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\SerialBLEInterface.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\SerialWifiInterface.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\TBeamBoard.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\ui_wifi_stub.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\esp32\wifi_iface_global.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\radiolib\CustomSX1262.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\radiolib\RadioLibWrappers.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\sensors\EnvironmentSensorManager.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\ui\MomentaryButton.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\src\helpers\ui\SSD1306Display.cpp.o
+Building .pio\build\heltec_v4_companion_radio_ble_wifi\bootloader.bin
+Generating partitions .pio\build\heltec_v4_companion_radio_ble_wifi\partitions.bin
+esptool.py v4.5.1
+Creating esp32s3 image...
+Merged 1 ELF section
+Successfully created esp32s3 image.
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libff0\SPI\SPI.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\liba6d\Wire\Wire.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\Hal.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\Module.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\hal\Arduino\ArduinoHal.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\hal\RPiPico\PicoHal.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\CC1101\CC1101.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LLCC68\LLCC68.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR1110.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libff0\libSPI.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR1120.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR1121.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\liba6d\libWire.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR11x0.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR11x0_commands.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR11x0_crypto.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR11x0_gnss.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR11x0_wifi.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR11x0\LR_common.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_chip_control.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_flrc.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_gfsk.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_lora.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_misc.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_ook.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_oqpsk.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_radio.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_cmds_ranging.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\LR2021\LR2021_config.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\RF69\RF69.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX123x\SX1231.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX123x\SX1233.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\STM32WLx.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\STM32WLx_Module.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX1261.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX1262.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX1268.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX126x.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX126x_LR_FHSS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX126x_commands.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX126x\SX126x_config.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1272.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1273.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1276.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1277.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1278.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX1279.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX127x\SX127x.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX128x\SX1280.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX128x\SX1281.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX128x\SX1282.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\SX128x\SX128x.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\Si443x\Si4430.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\Si443x\Si4431.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\Si443x\Si4432.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\Si443x\Si443x.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\modules\nRF24\nRF24.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\ADSB\ADSB.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\AFSK\AFSK.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\APRS\APRS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\AX25\AX25.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\BellModem\BellModem.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\ExternalRadio\ExternalRadio.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\FSK4\FSK4.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\Hellschreiber\Hellschreiber.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\LoRaWAN\LoRaWAN.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\LoRaWAN\LoRaWANBands.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\Morse\Morse.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\Pager\Pager.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\PhysicalLayer\PhysicalLayer.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\Print\ITA2String.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\Print\Print.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\RTTY\RTTY.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\protocols\SSTV\SSTV.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\utils\CRC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\utils\Cryptography.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\utils\FEC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\RadioLib\utils\Utils.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AES128.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AES192.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AES256.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AESCommon.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AESEsp32.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\AuthenticatedCipher.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\BLAKE2b.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\BLAKE2s.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\BigNumberUtil.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\BlockCipher.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\CTR.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\ChaCha.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\ChaChaPoly.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Cipher.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Crypto.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Curve25519.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\EAX.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Ed25519.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libfd0\libRadioLib.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\GCM.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\GF128.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\GHASH.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\HKDF.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Hash.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\KeccakCore.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\NoiseSource.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\OMAC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\P521.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\Poly1305.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\RNG.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHA224.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHA256.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHA3.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHA384.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHA512.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\SHAKE.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\XOF.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\Crypto\XTS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib497\Adafruit BusIO\Adafruit_BusIO_Register.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib497\Adafruit BusIO\Adafruit_GenericDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib497\Adafruit BusIO\Adafruit_I2CDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib497\Adafruit BusIO\Adafruit_SPIDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_DS1307.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_DS3231.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_Micros.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib6c7\libCrypto.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_Millis.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_PCF8523.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTC_PCF8563.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib497\libAdafruit BusIO.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\RTClib\RTClib.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8bb\Melopero RV3028\Melopero_RV3028.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libd3c\CayenneLPP\CayenneLPP.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libd3c\CayenneLPP\CayenneLPPPolyline.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib5f3\Adafruit INA3221 Library\Adafruit_INA3221.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libc98\Adafruit INA219\Adafruit_INA219.cpp.o
+pio : In file included from 
+.pio/libdeps/heltec_v4_companion_radio_ble_wifi/Melopero 
+RV3028/src/Melopero_RV3028.h:5,
+At line:1 char:1
++ pio run -e heltec_v4_companion_radio_ble_wifi 2>&1 | Out-File -FilePa 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (In file include...ero_RV30 
+   28.h:5,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+                 from 
+.pio/libdeps/heltec_v4_companion_radio_ble_wifi/Melopero 
+RV3028/src/Melopero_RV3028.cpp:1:
+C:/Users/Pedro Covas/.platformio/packages/framework-arduinoespressif32/l
+ibraries/Wire/src/Wire.h: In member function 'uint8_t 
+Melopero_RV3028::readFromRegister(uint8_t)':
+C:/Users/Pedro Covas/.platformio/packages/framework-arduinoespressif32/l
+ibraries/Wire/src/Wire.h:127:13: note: candidate 1: 'uint8_t 
+TwoWire::requestFrom(int, int)'
+     uint8_t requestFrom(int address, int size);
+             ^~~~~~~~~~~
+C:/Users/Pedro Covas/.platformio/packages/framework-arduinoespressif32/l
+ibraries/Wire/src/Wire.h:125:13: note: candidate 2: 'uint8_t 
+TwoWire::requestFrom(uint8_t, uint8_t)'
+     uint8_t requestFrom(uint8_t address, uint8_t size);
+             ^~~~~~~~~~~
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib2f5\INA226\INA226.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libad5\libRTClib.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib1d0\Adafruit INA260 Library\Adafruit_INA260.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib8bb\libMelopero RV3028.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib969\Adafruit Unified Sensor\Adafruit_Sensor.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libd8e\Adafruit AHTX0\Adafruit_AHTX0.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib826\Adafruit BME280 Library\Adafruit_BME280.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib5f3\libAdafruit INA3221 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libc50\Adafruit BMP280 Library\Adafruit_BMP280.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libc98\libAdafruit INA219.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib5f5\Adafruit SHTC3 Library\Adafruit_SHTC3.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib1d0\libAdafruit INA260 Library.a
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib2f5\libINA226.a
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libd3c\libCayenneLPP.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionCrc.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionErrors.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionI2CCommunication.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib969\libAdafruit Unified Sensor.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionI2CTxFrame.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionRxFrame.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libd8e\libAdafruit AHTX0.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionShdlcCommunication.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\Sensirion Core\SensirionShdlcTxFrame.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libca8\Sensirion I2C SHT4x\SensirionI2cSht4x.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib826\libAdafruit BME280 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib2ad\Arduino_LPS22HB\BARO.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libc50\libAdafruit BMP280 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib9c5\Adafruit MLX90614 Library\Adafruit_MLX90614.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib5f5\libAdafruit SHTC3 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\Adafruit_VL53L0X.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libddf\libSensirion Core.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\core\src\vl53l0x_api.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\core\src\vl53l0x_api_calibration.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\core\src\vl53l0x_api_core.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\core\src\vl53l0x_api_ranging.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libca8\libSensirion I2C SHT4x.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\core\src\vl53l0x_api_strings.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib2ad\libArduino_LPS22HB.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\platform\src\vl53l0x_i2c_comms.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib9c5\libAdafruit MLX90614 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\Adafruit_VL53L0X\platform\src\vl53l0x_platform.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f4\MicroNMEA\MicroNMEA.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib690\Adafruit BME680 Library\Adafruit_BME680.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib690\Adafruit BME680 Library\bme68x.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib775\Adafruit BMP085 Library\Adafruit_BMP085.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe97\FS\FS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe97\FS\vfs_api.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\lib9d2\LittleFS\LittleFS.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f2\libAdafruit_VL53L0X.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libd56\SPIFFS\SPIFFS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFi.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib8f4\libMicroNMEA.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiAP.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib690\libAdafruit BME680 Library.a
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib775\libAdafruit BMP085 Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiClient.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiGeneric.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiMulti.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libe97\libFS.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiSTA.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\lib9d2\libLittleFS.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiScan.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libd56\libSPIFFS.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiServer.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\WiFi\WiFiUdp.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\add_scalar.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\fe.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\ge.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\key_exchange.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\keypair.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\sc.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\seed.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\sha512.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\sign.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\ed25519\verify.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLE2902.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libffd\libWiFi.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLE2904.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEAddress.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEAdvertisedDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEAdvertising.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEBeacon.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLECharacteristic.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libbc3\libed25519.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLECharacteristicMap.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEClient.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEDescriptor.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEDescriptorMap.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEEddystoneTLM.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEEddystoneURL.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEExceptions.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEHIDDevice.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLERemoteCharacteristic.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLERemoteDescriptor.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLERemoteService.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEScan.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLESecurity.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEServer.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEService.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEServiceMap.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEUUID.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEUtils.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\BLEValue.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\FreeRTOS.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\BLE\GeneralUtils.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe95\Adafruit GFX Library\Adafruit_GFX.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe95\Adafruit GFX Library\Adafruit_GrayOLED.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe95\Adafruit GFX Library\Adafruit_SPITFT.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libe95\Adafruit GFX Library\glcdfont.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\libc55\Adafruit SSD1306\Adafruit_SSD1306.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\Esp.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\FirmwareMSC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\FunctionalInterrupt.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libf8e\libBLE.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\HWCDC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\HardwareSerial.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\IPAddress.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\IPv6Address.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libe95\libAdafruit GFX Library.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\MD5Builder.cpp.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libc55\libAdafruit SSD1306.a
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\Print.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\Stream.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\StreamString.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\Tone.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\USB.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\USBCDC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\USBMSC.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\WMath.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\WString.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\base64.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\cbuf.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-adc.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-bt.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-cpu.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-dac.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-gpio.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-i2c-slave.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-i2c.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-ledc.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-matrix.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-misc.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-psram.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-rgb-led.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-rmt.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-sigmadelta.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-spi.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-time.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-timer.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-tinyusb.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-touch.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\esp32-hal-uart.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\firmware_msc_fat.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\libb64\cdecode.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\libb64\cencode.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\main.cpp.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\stdlib_noniso.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\wiring_pulse.c.o
+Compiling .pio\build\heltec_v4_companion_radio_ble_wifi\FrameworkArduino\wiring_shift.c.o
+Archiving .pio\build\heltec_v4_companion_radio_ble_wifi\libFrameworkArduino.a
+Linking .pio\build\heltec_v4_companion_radio_ble_wifi\firmware.elf
+Retrieving maximum program size .pio\build\heltec_v4_companion_radio_ble_wifi\firmware.elf
+Checking size .pio\build\heltec_v4_companion_radio_ble_wifi\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   9.7% (used 203496 bytes from 2097152 bytes)
+Flash: [===       ]  25.7% (used 1682741 bytes from 6553600 bytes)
+Building .pio\build\heltec_v4_companion_radio_ble_wifi\firmware.bin
+esptool.py v4.5.1
+Creating esp32s3 image...
+Merged 3 ELF sections
+Successfully created esp32s3 image.
+======================== [SUCCESS] Took 161.85 seconds ========================
+
+Environment                         Status    Duration
+----------------------------------  --------  ------------
+heltec_v4_companion_radio_ble_wifi  SUCCESS   00:02:41.850
+========================= 1 succeeded in 00:02:41.850 =========================

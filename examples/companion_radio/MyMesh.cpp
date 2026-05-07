@@ -974,6 +974,7 @@ void MyMesh::begin(bool has_display) {
     }
     if (_prefs.bridge_enabled > 1) _prefs.bridge_enabled = 0;
 
+    
 
     // 4) Sanitizar prefs
     _prefs.rx_delay_base   = constrain(_prefs.rx_delay_base, 0, 20.0f);
@@ -1006,8 +1007,30 @@ void MyMesh::begin(bool has_display) {
 
     Serial.println("[MyMesh] LoRa config aplicada no arranque");
 
-  //arrancar radio
-    BaseChatMesh::begin();
+// ------------------------------------------------------------
+//  Ativar RPT e Bridge automaticamente no arranque
+//  Compatível com V3 e V4
+// ------------------------------------------------------------
+
+// NÃO forçar prefs — deixar o Companion decidir
+// Apenas aplicar o que está gravado
+
+// Aplicar RPT
+if (_prefs.client_repeat == 1) {
+    _prefs.disable_fwd = 0;
+} else {
+    _prefs.disable_fwd = 1;
+}
+
+// Aplicar Bridge
+if (_prefs.bridge_enabled == 1) {
+    enableEspNowBridge();   // V3 e V4
+}
+
+//ativa mesh
+
+BaseChatMesh::begin();
+
 
     // 7) BLE PIN
 #ifdef BLE_PIN_CODE
@@ -1036,33 +1059,17 @@ void MyMesh::begin(bool has_display) {
     addChannel("Public", PUBLIC_GROUP_PSK);
     _store->loadChannels(this);
 
-    // BRIDGE
-
-#ifdef WITH_ESPNOW_BRIDGE
-    _bridge = new ESPNowBridge(&_prefs, _mgr, getRTCClock());
-    _bridge->begin();
-
-    // aplicar estado e config vindos dos prefs
-    // (se a ESPNowBridge não ler tudo sozinha do &_prefs)
-    // Exemplo – adapta aos métodos reais:
-    // _bridge->setChannel(_prefs.bridge_channel);
-    // _bridge->setBaud(_prefs.bridge_baud);
-    // _bridge->setSecret(_prefs.bridge_secret);
-    // _bridge->setDelay(_prefs.bridge_delay);
-    // _bridge->setPktSource(_prefs.bridge_pkt_src);
-
-if (_prefs.bridge_enabled) {
-    enableEspNowBridge();
-} else {
-    disableEspNowBridge();
 }
 
-#endif
-
-
-
+void MyMesh::setClientRepeat(bool enabled) {
+    _prefs.client_repeat = enabled ? 1 : 0;
+    _prefs.disable_fwd   = enabled ? 0 : 1;
 }
 
+void MyMesh::setDisableFwd(bool disable) {
+    _prefs.disable_fwd = disable ? 1 : 0;
+    _prefs.client_repeat = disable ? 0 : 1;
+}
 
 
 void MyMesh::startInterface(BaseSerialInterface &serial) {

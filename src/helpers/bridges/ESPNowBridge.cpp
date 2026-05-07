@@ -32,27 +32,40 @@ ESPNowBridge::ESPNowBridge(NodePrefs *prefs, mesh::PacketManager *mgr, mesh::RTC
 void ESPNowBridge::begin() {
   Serial.println("[ESP-NOW] Initializing bridge...");
 
+  // Garantir que o WiFi está mesmo OFF antes (wrapper já faz isto, mas é idempotente)
+  esp_wifi_stop();
+  WiFi.mode(WIFI_OFF);
+  delay(20);
+
   Serial.println("[ESP-NOW] Setting WiFi STA mode");
   WiFi.mode(WIFI_STA);
 
-  // --- VALIDAR CANAL ---
-int channel = _prefs->bridge_channel;
-if (channel < 1 || channel > 13) {
-    Serial.printf("[ESP-NOW] Invalid channel %d, forcing channel 1\n", channel);
-    channel = 1;
-}
-
-Serial.printf("[ESP-NOW] Setting channel to %d\n", channel);
-esp_err_t ch = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
-if (ch != ESP_OK) {
-    Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
-    return;
-}
-
-  if (ch != ESP_OK) {
-    Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
+  // Arrancar driver WiFi
+  esp_err_t st = esp_wifi_start();
+  if (st != ESP_OK) {
+    Serial.printf("[ESP-NOW] ERROR esp_wifi_start(): %d\n", st);
     return;
   }
+
+  // Validar canal
+  int channel = _prefs->bridge_channel;
+  if (channel < 1 || channel > 13) {
+      Serial.printf("[ESP-NOW] Invalid channel %d, forcing channel 1\n", channel);
+      channel = 1;
+  }
+
+  Serial.printf("[ESP-NOW] Setting channel to %d\n", channel);
+  esp_err_t ch = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+  if (ch != ESP_OK) {
+      Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
+      return;
+  }
+
+  // (Opcional) debug do estado real
+  uint8_t primary;
+  wifi_second_chan_t second;
+  esp_wifi_get_channel(&primary, &second);
+  Serial.printf("[ESP-NOW] Effective WiFi channel = %d\n", primary);
 
   Serial.println("[ESP-NOW] Calling esp_now_init()");
   esp_err_t init = esp_now_init();
@@ -69,8 +82,10 @@ if (ch != ESP_OK) {
   esp_now_peer_info_t peerInfo = {};
   memset(&peerInfo, 0, sizeof(peerInfo));
   memset(peerInfo.peer_addr, 0xFF, ESP_NOW_ETH_ALEN);
-  peerInfo.channel = _prefs->bridge_channel;
+
+  peerInfo.channel = channel;        // usar o canal já validado
   peerInfo.encrypt = false;
+  peerInfo.ifidx = WIFI_IF_STA;      // explícito
 
   esp_err_t add = esp_now_add_peer(&peerInfo);
   if (add != ESP_OK) {
@@ -81,6 +96,7 @@ if (ch != ESP_OK) {
   Serial.println("[ESP-NOW] Bridge initialized OK");
   _initialized = true;
 }
+
 
 void ESPNowBridge::end() {
   Serial.println("[ESP-NOW] Stopping bridge...");

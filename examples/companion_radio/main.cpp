@@ -49,38 +49,17 @@ void setup() {
     Serial.println("BOOT OK");
     
     SPIFFS.begin(true);
-    // ⚠️ Apenas para este boot — reset de prefs
-    //SPIFFS.remove("/prefs.bin");
-    // depois disto, o MyMesh vai criar prefs novos
-    
-    the_mesh.begin(true);
     Serial.println("SPIFFS OK");
 
     board.begin();
     Serial.println("BOARD OK");
 
-     // Inicializar rádio SX1262 (OBRIGATÓRIO)
+    // Inicializar rádio SX1262 (OBRIGATÓRIO)
     if (!radio_init()) {
         Serial.println("SX1262 init FAILED");
     } else {
         Serial.println("SX1262 init OK");
     }
-
-    // carregar prefs
-    NodePrefs* prefs = the_mesh.getNodePrefs();
-
-    // aplicar LoRa ANTES do Mesh arrancar
-    radio_set_params(prefs->freq, prefs->bw, prefs->sf, prefs->cr);
-    radio_set_tx_power(prefs->tx_power_dbm);
-
-
-    #ifdef DISPLAY_CLASS
-    display.begin();                 // <- inicializa o SSD1306 / driver
-    ui_task.begin(&display, &sensors, the_mesh.getNodePrefs());
-    Serial.println("UI OK");
-    #endif
-
-
 
     // ---- BLE CORRETO ----
     char dev_name[32];
@@ -95,11 +74,19 @@ void setup() {
     serial_interface.setWiFi(nullptr);
     Serial.println("INTERFACE OK");
 
-    the_mesh.startInterface(serial_interface);
-    Serial.println("MESH START OK");
-    
+    // ---- UI ----
+#ifdef DISPLAY_CLASS
+    display.begin();
+    ui_task.begin(&display, &sensors, the_mesh.getNodePrefs());
+    Serial.println("UI OK");
+#endif
+
+    // ---- MESH (APENAS UMA VEZ) ----
     the_mesh.begin(true);
     Serial.println("MESH BEGIN OK");
+
+    the_mesh.startInterface(serial_interface);
+    Serial.println("MESH START OK");
 }
 
 void loop() {
