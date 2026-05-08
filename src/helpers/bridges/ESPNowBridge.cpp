@@ -7,6 +7,58 @@
 
 ESPNowBridge *ESPNowBridge::_instance = nullptr;
 
+// ---------------------------------------------------------
+// Funções utilitárias adicionadas
+// ---------------------------------------------------------
+
+static void printMacLabel(const char* label) {
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  Serial.printf("[%s] MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                label, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
+
+static bool wifiEspNowInit(int channel) {
+  static bool wifi_started = false;
+  static bool espnow_inited = false;
+
+  WiFi.mode(WIFI_STA);
+
+  if (!wifi_started) {
+    if (esp_wifi_start() != ESP_OK) {
+      Serial.println("[WIFI] esp_wifi_start() failed");
+      return false;
+    }
+    wifi_started = true;
+  }
+
+  if (channel < 1 || channel > 13) channel = 1;
+  if (esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
+    Serial.println("[WIFI] set_channel failed");
+    return false;
+  }
+
+  uint8_t primary;
+  wifi_second_chan_t second;
+  esp_wifi_get_channel(&primary, &second);
+  Serial.printf("[WIFI] Effective channel = %d\n", primary);
+
+  printMacLabel("WIFI");
+
+  if (!espnow_inited) {
+    if (esp_now_init() != ESP_OK) {
+      Serial.println("[ESP-NOW] init failed");
+      return false;
+    }
+    espnow_inited = true;
+  }
+
+  return true;
+}
+
+// ---------------------------------------------------------
+// Callbacks
+// ---------------------------------------------------------
 
 void ESPNowBridge::recv_cb(const uint8_t *mac, const uint8_t *data, int32_t len) {
   if (_instance) {
@@ -24,53 +76,36 @@ void ESPNowBridge::send_cb(const uint8_t *mac, esp_now_send_status_t status) {
   }
 }
 
+// ---------------------------------------------------------
+// Construtor
+// ---------------------------------------------------------
+
 ESPNowBridge::ESPNowBridge(NodePrefs *prefs, mesh::PacketManager *mgr, mesh::RTCClock *rtc)
     : BridgeBase(prefs, mgr, rtc), _rx_buffer_pos(0) {
   _instance = this;
 }
 
+// ---------------------------------------------------------
+// Inicialização revista
+// ---------------------------------------------------------
+
 void ESPNowBridge::begin() {
   Serial.println("[ESP-NOW] Initializing bridge...");
 
-  // Garantir que o WiFi está mesmo OFF antes (wrapper já faz isto, mas é idempotente)
   esp_wifi_stop();
   WiFi.mode(WIFI_OFF);
   delay(20);
 
-  Serial.println("[ESP-NOW] Setting WiFi STA mode");
   WiFi.mode(WIFI_STA);
 
-  // Arrancar driver WiFi
-  esp_err_t st = esp_wifi_start();
-  if (st != ESP_OK) {
-    Serial.printf("[ESP-NOW] ERROR esp_wifi_start(): %d\n", st);
-    return;
-  }
-
-  // Validar canal
   int channel = _prefs->bridge_channel;
   if (channel < 1 || channel > 13) {
-      Serial.printf("[ESP-NOW] Invalid channel %d, forcing channel 1\n", channel);
-      channel = 1;
+    Serial.printf("[ESP-NOW] Invalid channel %d, forcing 1\n", channel);
+    channel = 1;
   }
 
-  Serial.printf("[ESP-NOW] Setting channel to %d\n", channel);
-  esp_err_t ch = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
-  if (ch != ESP_OK) {
-      Serial.printf("[ESP-NOW] ERROR setting channel: %d\n", ch);
-      return;
-  }
-
-  // (Opcional) debug do estado real
-  uint8_t primary;
-  wifi_second_chan_t second;
-  esp_wifi_get_channel(&primary, &second);
-  Serial.printf("[ESP-NOW] Effective WiFi channel = %d\n", primary);
-
-  Serial.println("[ESP-NOW] Calling esp_now_init()");
-  esp_err_t init = esp_now_init();
-  if (init != ESP_OK) {
-    Serial.printf("[ESP-NOW] ERROR esp_now_init(): %d\n", init);
+  if (!wifiEspNowInit(channel)) {
+    Serial.println("[ESP-NOW] wifiEspNowInit failed");
     return;
   }
 
@@ -83,20 +118,29 @@ void ESPNowBridge::begin() {
   memset(&peerInfo, 0, sizeof(peerInfo));
   memset(peerInfo.peer_addr, 0xFF, ESP_NOW_ETH_ALEN);
 
-  peerInfo.channel = channel;        // usar o canal já validado
+  peerInfo.channel = channel;
   peerInfo.encrypt = false;
-  peerInfo.ifidx = WIFI_IF_STA;      // explícito
+  peerInfo.ifidx = WIFI_IF_STA;
 
-  esp_err_t add = esp_now_add_peer(&peerInfo);
-  if (add != ESP_OK) {
-    Serial.printf("[ESP-NOW] ERROR adding broadcast peer: %d\n", add);
-    return;
+  if (!esp_now_is_peer_exist(peerInfo.peer_addr)) {
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.println("[ESP-NOW] ERROR adding broadcast peer");
+    }
   }
+
+  printMacLabel("BRIDGE");
 
   Serial.println("[ESP-NOW] Bridge initialized OK");
   _initialized = true;
+  uint8_t test_msg[] = "BRIDGE-TEST";
+esp_err_t r = esp_now_send((uint8_t*)"\xFF\xFF\xFF\xFF\xFF\xFF", test_msg, sizeof(test_msg));
+Serial.printf("[TEST] BRIDGE TEST SEND result=%d\n", r);
+
 }
 
+// ---------------------------------------------------------
+// Encerramento
+// ---------------------------------------------------------
 
 void ESPNowBridge::end() {
   Serial.println("[ESP-NOW] Stopping bridge...");
@@ -115,8 +159,11 @@ void ESPNowBridge::end() {
   _initialized = false;
 }
 
+// ---------------------------------------------------------
+// Loop
+// ---------------------------------------------------------
+
 void ESPNowBridge::loop() {
-  // Apenas para debug
   static uint32_t last = 0;
   if (millis() - last > 5000) {
     last = millis();
@@ -124,12 +171,20 @@ void ESPNowBridge::loop() {
   }
 }
 
+// ---------------------------------------------------------
+// XOR crypto
+// ---------------------------------------------------------
+
 void ESPNowBridge::xorCrypt(uint8_t *data, size_t len) {
   size_t keyLen = strlen(_prefs->bridge_secret);
   for (size_t i = 0; i < len; i++) {
     data[i] ^= _prefs->bridge_secret[i % keyLen];
   }
 }
+
+// ---------------------------------------------------------
+// RX
+// ---------------------------------------------------------
 
 void ESPNowBridge::onDataRecv(const uint8_t *mac, const uint8_t *data, int32_t len) {
   Serial.printf("[ESP-NOW][RX] raw_len=%d\n", len);
@@ -181,6 +236,10 @@ void ESPNowBridge::onDataRecv(const uint8_t *mac, const uint8_t *data, int32_t l
   }
 }
 
+// ---------------------------------------------------------
+// TX
+// ---------------------------------------------------------
+
 void ESPNowBridge::onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.printf("[ESP-NOW][TX] status=%d\n", status);
 }
@@ -230,6 +289,10 @@ void ESPNowBridge::sendPacket(mesh::Packet *packet) {
 
   Serial.printf("[ESP-NOW][TX] len=%d result=%d\n", meshPacketLen, result);
 }
+
+// ---------------------------------------------------------
+// Entrega ao mesh
+// ---------------------------------------------------------
 
 void ESPNowBridge::onPacketReceived(mesh::Packet *packet) {
   Serial.println("[ESP-NOW][MESH] Packet delivered to mesh");
