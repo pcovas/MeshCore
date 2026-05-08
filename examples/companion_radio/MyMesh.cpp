@@ -568,11 +568,6 @@ bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
 
 void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, uint32_t delay_millis) {
   // TODO: dynamic send_scope, depending on recipient and current 'home' Region
-  #ifdef WITH_ESPNOW_BRIDGE
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-    #endif
   if (send_scope.isNull()) {
     sendFlood(pkt, delay_millis, _prefs.path_hash_mode + 1);
   } else {
@@ -584,11 +579,6 @@ void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, ui
 }
 void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pkt, uint32_t delay_millis) {
   // TODO: have per-channel send_scope
-  #ifdef WITH_ESPNOW_BRIDGE
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-  #endif
   if (send_scope.isNull()) {
     sendFlood(pkt, delay_millis, _prefs.path_hash_mode + 1);
   } else {
@@ -601,31 +591,50 @@ void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pk
 
 void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                            const char *text) {
-  markConnectionActive(from); // in case this is from a server, and we have a connection
-  queueMessage(from, TXT_TYPE_PLAIN, pkt, sender_timestamp, NULL, 0, text);
+  // --- Bridge replication ---
+  if (_bridge && _bridge->isRunning()) {
+    Serial.println("[FLOW] MyMesh → Bridge: sending packet (TXT_MSG)");
+    _bridge->sendPacket(pkt);
+  }
+  // --------------------------
+
+  // aqui manténs exatamente o corpo que já tinhas antes
+  // (o que fala com out_frame, PUSH_CODE_MSG_WAITING, UI, etc.)
 }
+
+
 
 void MyMesh::onCommandDataRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                const char *text) {
-  markConnectionActive(from); // in case this is from a server, and we have a connection
-  queueMessage(from, TXT_TYPE_CLI_DATA, pkt, sender_timestamp, NULL, 0, text);
+  // --- Bridge replication ---
+  if (_bridge && _bridge->isRunning()) {
+    Serial.println("[FLOW] MyMesh → Bridge: sending packet (CMD)");
+    _bridge->sendPacket(pkt);
+  }
 }
+
+
 
 void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                  const uint8_t *sender_prefix, const char *text) {
-  markConnectionActive(from);
-  // from.sync_since change needs to be persisted
-  dirty_contacts_expiry = futureMillis(LAZY_CONTACTS_WRITE_DELAY);
-  queueMessage(from, TXT_TYPE_SIGNED_PLAIN, pkt, sender_timestamp, sender_prefix, 4, text);
+  // --- Bridge replication ---
+  if (_bridge && _bridge->isRunning()) {
+    Serial.println("[FLOW] MyMesh → Bridge: sending packet (SIGNED)");
+    _bridge->sendPacket(pkt);
+  }
 }
+
+
 
 void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint32_t timestamp,
                                   const char *text) {
-  #ifdef WITH_ESPNOW_BRIDGE                                
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(pkt);
-    }
-  #endif
+  // --- Bridge replication ---
+ if (_bridge && _bridge->isRunning()) {
+    Serial.println("[FLOW] MyMesh → Bridge: sending packet (XXX)");
+    _bridge->sendPacket(pkt);
+}
+  // --------------------------
+
   int i = 0;
   if (app_target_ver >= 3) {
     out_frame[i++] = RESP_CODE_CHANNEL_MSG_RECV_V3;
@@ -670,6 +679,8 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
   if (_ui) _ui->newMsg(path_len, channel_name, text, offline_queue_len);
 #endif
 }
+
+
 
 uint8_t MyMesh::onContactRequest(const ContactInfo &contact, uint32_t sender_timestamp, const uint8_t *data,
                                  uint8_t len, uint8_t *reply) {
@@ -841,11 +852,13 @@ void MyMesh::onControlDataRecv(mesh::Packet *packet) {
 }
 
 void MyMesh::onRawDataRecv(mesh::Packet *packet) {
-  #ifdef WITH_ESPNOW_BRIDGE
-    if (_bridge && _bridge->isRunning()) {
-        _bridge->onPacketReceived(packet);
-    }
-  #endif
+  // --- Bridge replication ---
+  if (_bridge && _bridge->isRunning()) {
+    Serial.println("[FLOW] MyMesh → Bridge: sending packet (RAW)");
+    _bridge->sendPacket(packet);
+  }
+  // --------------------------
+
   if (packet->payload_len + 4 > sizeof(out_frame)) {
     MESH_DEBUG_PRINTLN("onRawDataRecv(), payload_len too long: %d", packet->payload_len);
     return;
@@ -864,6 +877,8 @@ void MyMesh::onRawDataRecv(mesh::Packet *packet) {
     MESH_DEBUG_PRINTLN("onRawDataRecv(), data received while app offline");
   }
 }
+
+
 
 void MyMesh::onTraceRecv(mesh::Packet *packet, uint32_t tag, uint32_t auth_code, uint8_t flags,
                          const uint8_t *path_snrs, const uint8_t *path_hashes, uint8_t path_len) {
@@ -1001,19 +1016,15 @@ void MyMesh::begin(bool has_display) {
     if (_prefs.pa_enabled) paOn();
     else paOff();
 
-    // 6) Aplicar LoRa ao rádio (versão correta para o teu MeshCore)
-    radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
-    radio_set_tx_power(_prefs.tx_power_dbm);
+// 6) Aplicar LoRa ao rádio (versão correta para o teu MeshCore)
+radio_set_params(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
+radio_set_tx_power(_prefs.tx_power_dbm);
 
-    Serial.println("[MyMesh] LoRa config aplicada no arranque");
+Serial.println("[MyMesh] LoRa config aplicada no arranque");
 
 // ------------------------------------------------------------
 //  Ativar RPT e Bridge automaticamente no arranque
-//  Compatível com V3 e V4
 // ------------------------------------------------------------
-
-// NÃO forçar prefs — deixar o Companion decidir
-// Apenas aplicar o que está gravado
 
 // Aplicar RPT
 if (_prefs.client_repeat == 1) {
@@ -1024,15 +1035,16 @@ if (_prefs.client_repeat == 1) {
 
 // Aplicar Bridge
 if (_prefs.bridge_enabled == 1) {
-    enableEspNowBridge();   // V3 e V4
+    enableEspNowBridge();   // cria _bridge e faz begin()
+    Serial.printf("[MyMesh] Bridge ativo: %p\n", _bridge);
 }
 
-//ativa mesh
-
+// 7) Ativar MeshCore
 BaseChatMesh::begin();
 
 
-    // 7) BLE PIN
+
+    // 8) BLE PIN
 #ifdef BLE_PIN_CODE
     if (_prefs.ble_pin == 0) {
 #ifdef DISPLAY_CLASS
@@ -1052,7 +1064,7 @@ BaseChatMesh::begin();
     _active_ble_pin = 0;
 #endif
 
-    // 8) Contacts + Channels
+    // 9) Contacts + Channels
     resetContacts();
     _store->loadContacts(this);
     bootstrapRTCfromContacts();

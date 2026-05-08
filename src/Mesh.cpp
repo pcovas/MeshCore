@@ -39,11 +39,10 @@ int Mesh::searchChannelsByHash(const uint8_t* hash, GroupChannel channels[], int
 }
 
 DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
-  if (pkt->getPayloadVer() > PAYLOAD_VER_1) {  // not supported in this firmware version
+  if (pkt->getPayloadVer() > PAYLOAD_VER_1) { 
     MESH_DEBUG_PRINTLN("%s Mesh::onRecvPacket(): unsupported packet version", getLogDateTime());
     return ACTION_RELEASE;
   }
-
   if (pkt->isRouteDirect() && pkt->getPayloadType() == PAYLOAD_TYPE_TRACE) {
     if (pkt->path_len < MAX_PATH_SIZE) {
       uint8_t i = 0;
