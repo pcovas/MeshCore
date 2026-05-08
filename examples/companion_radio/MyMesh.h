@@ -109,7 +109,7 @@ public:
 
   int  getRecentlyHeard(AdvertPath dest[], int max_num);
   #include "helpers/bridges/ESPNowBridge.h"
-  ESPNowBridge* _bridge = nullptr;
+
   void setBridgeEnabled(bool en) {
       _prefs.bridge_enabled = en ? 1 : 0;
   }

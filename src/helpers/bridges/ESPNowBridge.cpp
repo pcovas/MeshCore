@@ -177,10 +177,15 @@ void ESPNowBridge::loop() {
 
 void ESPNowBridge::xorCrypt(uint8_t *data, size_t len) {
   size_t keyLen = strlen(_prefs->bridge_secret);
+  if (keyLen == 0) {
+    // Sem chave → não faz XOR, só passa em claro
+    return;
+  }
   for (size_t i = 0; i < len; i++) {
     data[i] ^= _prefs->bridge_secret[i % keyLen];
   }
 }
+
 
 // ---------------------------------------------------------
 // RX

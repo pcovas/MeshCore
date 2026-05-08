@@ -14,6 +14,11 @@ extern "C" void espnowBridge_init(void* prefs, void* mgr, void* rtc)
     }
 }
 
+extern "C" ESPNowBridge* espnowBridge_get()
+{
+    return g_bridge;
+}
+
 extern "C" void espnowBridge_loop()
 {
     if (g_bridge)

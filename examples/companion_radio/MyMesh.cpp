@@ -1,3 +1,4 @@
+#warning "COMPILING MyMesh.cpp"
 #include "MyMesh.h"
 
 #include <Arduino.h> // needed for PlatformIO
@@ -5,10 +6,10 @@
 #include "helpers/esp32/PAControl.h"
 
 #include "helpers/bridges/ESPNowBridge.h"
-#ifdef WITH_ESPNOW_BRIDGE
+
 extern "C" void enableEspNowBridge();
 extern "C" void disableEspNowBridge();
-#endif
+extern "C" ESPNowBridge* espnowBridge_get();
 
 
 #define CMD_APP_START                 1
@@ -592,9 +593,11 @@ void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pk
 void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                            const char *text) {
   // --- Bridge replication ---
-  if (_bridge && _bridge->isRunning()) {
+  ESPNowBridge* bridge = espnowBridge_get();
+  if (bridge && bridge->isRunning()) {
     Serial.println("[FLOW] MyMesh → Bridge: sending packet (TXT_MSG)");
-    _bridge->sendPacket(pkt);
+    Serial.println("[FLOW] HOOK ENTER onMessageRecv");
+    bridge->sendPacket(pkt);
   }
   // --------------------------
 
@@ -607,9 +610,12 @@ void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t 
 void MyMesh::onCommandDataRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                const char *text) {
   // --- Bridge replication ---
-  if (_bridge && _bridge->isRunning()) {
+  ESPNowBridge* bridge = espnowBridge_get();
+  if (bridge && bridge->isRunning()) {
     Serial.println("[FLOW] MyMesh → Bridge: sending packet (CMD)");
-    _bridge->sendPacket(pkt);
+    Serial.println("[FLOW] HOOK ENTER onMessageRecv");
+
+    bridge->sendPacket(pkt);
   }
 }
 
@@ -618,9 +624,11 @@ void MyMesh::onCommandDataRecv(const ContactInfo &from, mesh::Packet *pkt, uint3
 void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                                  const uint8_t *sender_prefix, const char *text) {
   // --- Bridge replication ---
-  if (_bridge && _bridge->isRunning()) {
+  ESPNowBridge* bridge = espnowBridge_get();
+  if (bridge && bridge->isRunning()) {
     Serial.println("[FLOW] MyMesh → Bridge: sending packet (SIGNED)");
-    _bridge->sendPacket(pkt);
+    Serial.println("[FLOW] HOOK ENTER onMessageRecv");
+    bridge->sendPacket(pkt);
   }
 }
 
@@ -629,9 +637,11 @@ void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uin
 void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint32_t timestamp,
                                   const char *text) {
   // --- Bridge replication ---
- if (_bridge && _bridge->isRunning()) {
+  ESPNowBridge* bridge = espnowBridge_get();
+ if (bridge && bridge->isRunning()) {
     Serial.println("[FLOW] MyMesh → Bridge: sending packet (XXX)");
-    _bridge->sendPacket(pkt);
+    Serial.println("[FLOW] HOOK ENTER onMessageRecv");
+    bridge->sendPacket(pkt);
 }
   // --------------------------
 
@@ -852,30 +862,49 @@ void MyMesh::onControlDataRecv(mesh::Packet *packet) {
 }
 
 void MyMesh::onRawDataRecv(mesh::Packet *packet) {
-  // --- Bridge replication ---
-  if (_bridge && _bridge->isRunning()) {
-    Serial.println("[FLOW] MyMesh → Bridge: sending packet (RAW)");
-    _bridge->sendPacket(packet);
-  }
-  // --------------------------
 
-  if (packet->payload_len + 4 > sizeof(out_frame)) {
-    MESH_DEBUG_PRINTLN("onRawDataRecv(), payload_len too long: %d", packet->payload_len);
-    return;
-  }
-  int i = 0;
-  out_frame[i++] = PUSH_CODE_RAW_DATA;
-  out_frame[i++] = (int8_t)(_radio->getLastSNR() * 4);
-  out_frame[i++] = (int8_t)(_radio->getLastRSSI());
-  out_frame[i++] = 0xFF; // reserved (possibly path_len in future)
-  memcpy(&out_frame[i], packet->payload, packet->payload_len);
-  i += packet->payload_len;
+    ESPNowBridge* bridge = espnowBridge_get();
 
-  if (_serial->isConnected()) {
-    _serial->writeFrame(out_frame, i);
-  } else {
-    MESH_DEBUG_PRINTLN("onRawDataRecv(), data received while app offline");
-  }
+    // --- TESTE: replica qualquer RAW curto sem path ---
+    if (bridge && bridge->isRunning()) {
+        if (packet->path_len == 0 &&
+            packet->payload_len == 20) {
+
+            Serial.println("[FLOW] MyMesh → Bridge: sending RAW-DIRECT (len=20, path_len=0)");
+            bridge->sendPacket(packet);
+        }
+    }
+
+    // --- DEBUG ---
+    Serial.printf("[RAW-DBG] isRouteDirect=%d isRouteFlood=%d path_len=%d payload_len=%d first=%u\n",
+                  packet->isRouteDirect(),
+                  packet->isRouteFlood(),
+                  packet->path_len,
+                  packet->payload_len,
+                  packet->payload_len > 0 ? packet->payload[0] : 0);
+
+    // --- NÃO repetir a variável bridge aqui ---
+    // --- NÃO duplicar lógica de replicação aqui ---
+
+    // --- resto do código original ---
+    if (packet->payload_len + 4 > sizeof(out_frame)) {
+        MESH_DEBUG_PRINTLN("onRawDataRecv(), payload_len too long: %d", packet->payload_len);
+        return;
+    }
+
+    int i = 0;
+    out_frame[i++] = PUSH_CODE_RAW_DATA;
+    out_frame[i++] = (int8_t)(_radio->getLastSNR() * 4);
+    out_frame[i++] = (int8_t)(_radio->getLastRSSI());
+    out_frame[i++] = 0xFF;
+    memcpy(&out_frame[i], packet->payload, packet->payload_len);
+    i += packet->payload_len;
+
+    if (_serial->isConnected()) {
+        _serial->writeFrame(out_frame, i);
+    } else {
+        MESH_DEBUG_PRINTLN("onRawDataRecv(), data received while app offline");
+    }
 }
 
 
@@ -1035,8 +1064,10 @@ if (_prefs.client_repeat == 1) {
 
 // Aplicar Bridge
 if (_prefs.bridge_enabled == 1) {
-    enableEspNowBridge();   // cria _bridge e faz begin()
-    Serial.printf("[MyMesh] Bridge ativo: %p\n", _bridge);
+    enableEspNowBridge();   // cria bridge e faz begin()
+    ESPNowBridge* bridge = espnowBridge_get();
+    Serial.println("[FLOW] HOOK ENTER onMessageRecv");
+    Serial.printf("[MyMesh] Bridge ativo: %p\n", bridge);
 }
 
 // 7) Ativar MeshCore
@@ -2191,9 +2222,9 @@ void MyMesh::checkSerialInterface() {
 void MyMesh::loop() {
     BaseChatMesh::loop();
 
-#ifdef WITH_ESPNOW_BRIDGE
-    if (_bridge) _bridge->loop();
-#endif
+    ESPNowBridge* bridge = espnowBridge_get();
+    if (bridge) bridge->loop();
+
 
     if (_cli_rescue) {
         checkCLIRescueCmd();
