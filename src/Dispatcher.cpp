@@ -1,4 +1,8 @@
 #include "Dispatcher.h"
+#include "helpers/bridges/ESPNowBridge.h"
+//class ESPNowBridge;
+//extern ESPNowBridge* ESPNowBridge::_instance;
+
 
 #if MESH_PACKET_LOGGING
   #include <Arduino.h>
@@ -178,7 +182,7 @@ void Dispatcher::checkRecv() {
       pkt = NULL;
     }
   }
-  if (pkt) {
+    if (pkt) {
     #if MESH_PACKET_LOGGING
     Serial.print(getLogDateTime());
     Serial.printf(": RX, len=%d (type=%d, route=%s, payload_len=%d) SNR=%d RSSI=%d score=%d time=%d", 
@@ -197,7 +201,15 @@ void Dispatcher::checkRecv() {
       Serial.printf("\n");
     }
     #endif
+
     logRx(pkt, pkt->getRawLength(), score);   // hook for custom logging
+
+    // --- ESP-NOW bridge: replicar floods e diretas (type=2) ---
+   if (pkt->isRouteFlood() || pkt->getPayloadType() == 2) {
+    Serial.println("[FLOW] RADIO → Bridge: replicating packet (FLOOD or DIRECT)");
+    ESPNowBridge::getInstance()->sendPacket(pkt);
+}
+
 
     if (pkt->isRouteFlood()) {
       n_recv_flood++;
@@ -219,6 +231,7 @@ void Dispatcher::checkRecv() {
     }
   }
 }
+
 
 void Dispatcher::processRecvPacket(Packet* pkt) {
   DispatcherAction action = onRecvPacket(pkt);
