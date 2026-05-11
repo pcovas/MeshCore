@@ -543,6 +543,7 @@ public:
       } else {
         _task->enableSerial();
       }
+      the_mesh.savePrefs();
       return true;
     }
     if (c == KEY_ENTER && _page == HomePage::ADVERT) {

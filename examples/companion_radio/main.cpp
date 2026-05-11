@@ -48,7 +48,8 @@ void setup() {
     delay(2000);
     Serial.println("BOOT OK");
     
-    SPIFFS.begin(true);
+    SPIFFS.begin(false);
+    //SPIFFS.begin(true); apenas se quiser formatar caso falhe, mas cuidado que apaga tudo!
     Serial.println("SPIFFS OK");
 
     board.begin();
@@ -91,7 +92,9 @@ void setup() {
 
 void loop() {
   the_mesh.loop();
-#ifdef DISPLAY_CLASS
+//sensors.loop();
+  #ifdef DISPLAY_CLASS
   ui_task.loop();
 #endif
+//rtc_clock.tick();
 }

@@ -1002,8 +1002,25 @@ void MyMesh::begin(bool has_display) {
     strcpy(_prefs.node_name, pub_key_hex);
 #endif
 
-    // 2) Carregar prefs reais
-    _store->loadPrefs(_prefs, sensors.node_lat, sensors.node_lon);
+ // 2) Carregar prefs reais
+_store->loadPrefs(_prefs, sensors.node_lat, sensors.node_lon);
+
+// ------------------------------------------------------------
+// 2b) Se o nome não foi carregado do SPIFFS, manter o default
+// ------------------------------------------------------------
+bool need_save = false;
+
+// Nome inválido? (vazio, 0xFF, ou só espaços)
+if (_prefs.node_name[0] == '\0' || _prefs.node_name[0] == 0xFF || strlen(_prefs.node_name) < 2) {
+    Serial.println("[MyMesh] Nome vazio nas prefs → manter nome default");
+    need_save = true;
+}
+
+// Só guardar se realmente corrigimos algo
+if (need_save) {
+    _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon);
+}
+
 
     // 3) Defaults repeater
     if (_prefs.flood_max == 0) _prefs.flood_max = 10;
