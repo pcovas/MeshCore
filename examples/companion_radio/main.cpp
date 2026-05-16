@@ -61,14 +61,23 @@ void setup() {
     } else {
         Serial.println("SX1262 init OK");
     }
+ // ---- MESH (APENAS UMA VEZ) ----
+    the_mesh.begin(true);
+    Serial.println("MESH BEGIN OK");
 
-    // ---- BLE CORRETO ----
-    char dev_name[32];
-    snprintf(dev_name, sizeof(dev_name), "MeshCore-%06X", (uint32_t)ESP.getEfuseMac());
-    Serial.println(dev_name);
+    NodePrefs* prefs = the_mesh.getNodePrefs();
+// ---- PATCH DO NOME ----
+if (prefs->node_name[0] == '\0') {
+    snprintf(prefs->node_name, sizeof(prefs->node_name),
+             "MeshCore-%06X", (uint32_t)ESP.getEfuseMac());
 
-    ble_if.begin("MeshCore-", dev_name, 123456);
-    Serial.println("BLE OK");
+    store.savePrefs(*prefs, 0.0, 0.0);
+}
+
+Serial.printf("NOME FINAL PARA BLE: %s\n", prefs->node_name);
+
+// ---- BLE COM NOME FINAL ----
+ble_if.begin("MeshCore-", prefs->node_name, 121417);
 
     // ---- SEM WIFI ----
     serial_interface.setBLE(&ble_if);
@@ -82,9 +91,7 @@ void setup() {
     Serial.println("UI OK");
 #endif
 
-    // ---- MESH (APENAS UMA VEZ) ----
-    the_mesh.begin(true);
-    Serial.println("MESH BEGIN OK");
+   
 
     the_mesh.startInterface(serial_interface);
     Serial.println("MESH START OK");
