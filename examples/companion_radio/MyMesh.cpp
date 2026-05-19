@@ -592,6 +592,24 @@ void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pk
 
 void MyMesh::onMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uint32_t sender_timestamp,
                            const char *text) {
+    
+ // Mostra no display local 
+    if (_ui) {
+        _ui->newMsg(0, from.name, text, 0);
+        if (!_serial->isConnected()) {
+            _ui->notify(UIEventType::contactMessage);
+        }
+    }
+
+    // Envia para o Companion (BLE/WiFi)
+    queueMessage(from,
+                 TXT_TYPE_PLAIN,
+                 pkt,
+                 sender_timestamp,
+                 nullptr,
+                 0,
+                 text);
+
   // --- Bridge replication ---
   ESPNowBridge* bridge = espnowBridge_get();
   if (bridge && bridge->isRunning()) {
@@ -2239,9 +2257,10 @@ void MyMesh::checkSerialInterface() {
 void MyMesh::loop() {
     BaseChatMesh::loop();
 
-    ESPNowBridge* bridge = espnowBridge_get();
-    if (bridge) bridge->loop();
-
+  ESPNowBridge* bridge = espnowBridge_get();
+  if (bridge && bridge->isRunning()) {
+    bridge->loop();
+  }
 
     if (_cli_rescue) {
         checkCLIRescueCmd();

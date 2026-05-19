@@ -2,6 +2,7 @@
 #include "helpers/bridges/ESPNowBridge.h"
 //class ESPNowBridge;
 //extern ESPNowBridge* ESPNowBridge::_instance;
+#include "helpers/esp32/MultiInterface.h"
 
 
 #if MESH_PACKET_LOGGING
@@ -204,11 +205,21 @@ void Dispatcher::checkRecv() {
 
     logRx(pkt, pkt->getRawLength(), score);   // hook for custom logging
 
-    // --- ESP-NOW bridge: replicar floods e diretas (type=2) ---
-   if (pkt->isRouteFlood() || pkt->getPayloadType() == 2) {
+ 
+// --- ESP-NOW bridge: replicar floods e diretas (type=2) ---
+if (pkt->isRouteFlood() || pkt->getPayloadType() == 2) {
+  ESPNowBridge* bridge = ESPNowBridge::getInstance();
+
+  // Se o bridge não existir ou não estiver a correr, NÃO replicar
+  if (!bridge || !bridge->isRunning()) {
+    // opcional: log mínimo
+    // Serial.println("[ESP-NOW] Bridge not running, skip replication");
+  } else {
     Serial.println("[FLOW] RADIO → Bridge: replicating packet (FLOOD or DIRECT)");
-    ESPNowBridge::getInstance()->sendPacket(pkt);
+    bridge->sendPacket(pkt);
+  }
 }
+
 
 
     if (pkt->isRouteFlood()) {
