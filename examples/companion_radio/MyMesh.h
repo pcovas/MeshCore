@@ -15,6 +15,12 @@
 #define FIRMWARE_VERSION "v1.17.1"
 #endif
 
+#ifdef WITH_ESPNOW_BRIDGE
+  #include "helpers/bridges/ESPNowBridge.h"
+  #define WITH_BRIDGE
+#endif
+
+
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
 #include <InternalFileSystem.h>
 #elif defined(RP2040_PLATFORM)
@@ -91,6 +97,10 @@ public:
   void begin(bool has_display);
   void startInterface(BaseSerialInterface &serial);
 
+#if defined(WITH_ESPNOW_BRIDGE)
+  ESPNowBridge bridge;
+#endif
+
   const char *getNodeName();
   NodePrefs *getNodePrefs();
   uint32_t getBLEPin();
@@ -103,6 +113,9 @@ public:
   int  getRecentlyHeard(AdvertPath dest[], int max_num);
 
 protected:
+  void logTx(mesh::Packet* pkt, int len) override;
+  void logRx(mesh::Packet* pkt, int len, float score) override;
+
   float getAirtimeBudgetFactor() const override;
   int getInterferenceThreshold() const override;
   bool getCADEnabled() const override;

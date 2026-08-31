@@ -163,6 +163,18 @@ void MyMesh::writeDisabledFrame() {
   _serial->writeFrame(buf, 1);
 }
 
+
+void MyMesh::logTx(mesh::Packet *pkt, int len) {
+#ifdef WITH_BRIDGE
+  bridge.sendPacket(pkt);
+#endif
+}
+
+void MyMesh::logRx(mesh::Packet *pkt, int len, float score) {
+  // sem ação extra
+}
+
+
 void MyMesh::writeContactRespFrame(uint8_t code, const ContactInfo &contact) {
   int i = 0;
   out_frame[i++] = code;
@@ -862,7 +874,11 @@ void MyMesh::onSendTimeout() {}
 
 MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMeshTables &tables, DataStore& store, AbstractUITask* ui)
     : BaseChatMesh(radio, *new ArduinoMillis(), rng, rtc, *new StaticPoolPacketManager(16), tables),
-      _serial(NULL), telemetry(MAX_PACKET_PAYLOAD - 4), _store(&store), _ui(ui), _iter(0) {
+      _serial(NULL), telemetry(MAX_PACKET_PAYLOAD - 4), _store(&store), _ui(ui), _iter(0)
+#if defined(WITH_ESPNOW_BRIDGE)
+      , bridge(&_prefs, _mgr, &rtc)
+#endif
+{
   _iter_started = false;
   _cli_rescue = false;
   offline_queue_len = 0;
@@ -883,24 +899,33 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _prefs.bw = LORA_BW;
   _prefs.cr = LORA_CR;
   _prefs.tx_power_dbm = LORA_TX_POWER;
-  _prefs.gps_enabled = 0;       // GPS disabled by default
-  _prefs.gps_interval = 0;      // No automatic GPS updates by default
+  _prefs.gps_enabled = 0;
+  _prefs.gps_interval = 0;
   _prefs.radio_fem_rxgain = 1;
   _prefs.radio_fem_txgain = 0;
-  //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
+  //_prefs.rx_delay_base = 10.0f;
   _prefs.setRepeatEn(false);
+
 #if defined(USE_SX1262) || defined(USE_SX1268)
 #ifdef SX126X_RX_BOOSTED_GAIN
   _prefs.rx_boosted_gain = SX126X_RX_BOOSTED_GAIN;
 #else
-  _prefs.rx_boosted_gain = 1; // enabled by default
+  _prefs.rx_boosted_gain = 1;
 #endif
 #endif
+
+  _prefs.bridge_enabled = 1;
+  StrHelper::strncpy(_prefs.bridge_secret, "LVSITANOS", sizeof(_prefs.bridge_secret));
 }
+
 
 void MyMesh::begin(bool has_display) {
   BaseChatMesh::begin();
-
+#if defined(WITH_BRIDGE)
+  if (_prefs.bridge_enabled) {
+    bridge.begin();
+  }
+#endif
   if (!_store->loadMainIdentity(self_id)) {
     self_id = radio_new_identity(); // create new random identity
     int count = 0;
@@ -2227,6 +2252,10 @@ void MyMesh::checkSerialInterface() {
 }
 
 void MyMesh::loop() {
+
+#ifdef WITH_BRIDGE
+  bridge.loop();
+#endif
   BaseChatMesh::loop();
 
   if (_cli_rescue) {

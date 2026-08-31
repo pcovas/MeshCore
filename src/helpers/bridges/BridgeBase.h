@@ -1,11 +1,15 @@
 #pragma once
 
 #include "helpers/AbstractBridge.h"
-#include "helpers/CommonCLI.h"
 #include "helpers/SimpleMeshTables.h"
 
-#include <RTClib.h>
+#if defined(MESHCORE_COMPANION_BUILD)
+  #include "NodePrefs.h"        // versão do companion_radio (include relativo, resolvido via -I do build)
+#else
+  #include "helpers/CommonCLI.h"   // versão do repeater (como estava originalmente)
+#endif
 
+#include <RTClib.h>
 /**
  * @brief Base class implementing common bridge functionality
  *
