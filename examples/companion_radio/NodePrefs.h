@@ -79,6 +79,24 @@ private:
   };
   RadioPrefs radio;
 
+
+class BridgePrefs : public ConfigSerializer {
+  NodePrefs* _parent;
+protected:
+  void structure() override {
+    def("en", _parent->bridge_enabled);
+    def("ch", _parent->bridge_channel);
+    // NOTA: bridge_secret fica de fora de propósito — não convém persistir
+    // um "segredo" em texto simples no ficheiro de prefs; mantém-no como
+    // valor fixo no código (como já fazes) a não ser que precises mesmo
+    // de o poder mudar via app.
+  }
+public:
+  BridgePrefs(NodePrefs* parent) : _parent(parent) { }
+};
+BridgePrefs bridge_prefs;   // nome diferente de "bridge" para não conflituar com o membro da MyMesh
+
+
   class GPSPrefs : public ConfigSerializer {  // COPIED from CommonCLI (for now)
     NodePrefs* _parent;
   protected:
@@ -121,6 +139,7 @@ private:
       def("tel_base", _parent->telemetry_mode_base);
       def("tel_loc", _parent->telemetry_mode_loc);
       def("tel_env", _parent->telemetry_mode_env);
+      def("bridge", _parent->bridge_prefs);
     }
   public:
     CompanionPrefs(NodePrefs* parent) : _parent(parent) { }
@@ -140,7 +159,7 @@ protected:
     def("comp", companion);
   }
 public:
-  NodePrefs() : radio(this), gps(this), companion(this) {
+  NodePrefs() : radio(this), bridge_prefs(this), gps(this), companion(this) {
     node_name[0] = 0;
     default_scope_name[0] = 0;
     memset(default_scope_key, 0, sizeof(default_scope_key));

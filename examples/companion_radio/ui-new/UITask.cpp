@@ -91,6 +91,7 @@ class HomeScreen : public UIScreen {
     RADIO,
     BLUETOOTH,
     ADVERT,
+    RPT, 
 #if ENV_INCLUDE_GPS == 1
     GPS,
 #endif
@@ -421,6 +422,14 @@ public:
       if (sensors_scroll) sensors_scroll_offset = (sensors_scroll_offset+1)%sensors_nb;
       else sensors_scroll_offset = 0;
 #endif
+} else if (_page == HomePage::RPT) {
+  bool en = _node_prefs->isRepeatEn();
+  display.setColor(UIColor::corp_blue);
+  display.setTextSize(2);
+  display.drawTextCentered(display.width() / 2, 22, en ? "RPT: ON" : "RPT: OFF");
+  display.setColor(UIColor::secondary_txt);
+  display.setTextSize(1);
+  display.drawTextCentered(display.width() / 2, 64 - 11, "toggle: " PRESS_LABEL);
     } else if (_page == HomePage::SHUTDOWN) {
       display.setColor(UIColor::corp_blue);
       display.setTextSize(1);
@@ -465,6 +474,14 @@ public:
       }
       return true;
     }
+    if (c == KEY_ENTER && _page == HomePage::RPT) {
+  bool en = !_node_prefs->isRepeatEn();
+  _node_prefs->setRepeatEn(en);
+  the_mesh.savePrefs();
+  _task->notify(UIEventType::ack);
+  _task->showAlert(en ? "Repeat: ON" : "Repeat: OFF", 800);
+  return true;
+}
 #if ENV_INCLUDE_GPS == 1
     if (c == KEY_ENTER && _page == HomePage::GPS) {
       _task->toggleGPS();
