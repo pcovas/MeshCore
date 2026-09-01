@@ -41,7 +41,7 @@ public:
   char default_scope_name[31];
   uint8_t default_scope_key[16];
   uint8_t bridge_enabled = 1;
-  uint16_t bridge_delay = 0;
+  uint16_t bridge_delay = 1;
   uint8_t bridge_pkt_src = 0;
   uint32_t bridge_baud = 115200;
   uint8_t bridge_channel = 1;
